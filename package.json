@@ -1,14 +1,20 @@
 {
-  "name": "bittorrent-dht",
-  "description": "Simple, robust, BitTorrent DHT implementation",
-  "version": "3.0.0",
+  "name": "generic-dht",
+  "description": "Generic DHT implementation",
+  "version": "0.0.1",
   "author": {
-    "name": "Feross Aboukhadijeh",
-    "email": "feross@feross.org",
-    "url": "http://feross.org/"
+    "name": "LoveIsGrief",
+    "email": "LoveIsGrief@users.noreply.github.com"
   },
+  "contributors":[
+    {
+      "name": "Feross Aboukhadijeh",
+      "email": "feross@feross.org",
+      "url": "http://feross.org/"
+    }
+  ],
   "bugs": {
-    "url": "https://github.com/feross/bittorrent-dht/issues"
+    "url": "https://github.com/LoveIsGrief/generic-dht/issues"
   },
   "dependencies": {
     "addr-to-ip-port": "^1.0.0",
@@ -29,10 +35,8 @@
     "standard": "^2.0.0",
     "tape": "^3.5.0"
   },
-  "homepage": "http://webtorrent.io",
   "keywords": [
     "torrent",
-    "bittorrent",
     "dht",
     "distributed hash table",
     "protocol",
@@ -44,7 +48,7 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/feross/bittorrent-dht.git"
+    "url": "https://github.com/LoveIsGrief/generic-dht.git"
   },
   "scripts": {
     "test": "standard && tape test/*.js",
