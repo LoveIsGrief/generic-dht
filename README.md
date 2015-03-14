@@ -1,67 +1,24 @@
-# bittorrent-dht [![travis][travis-image]][travis-url] [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url]
+# generic-dht
 
-[travis-image]: https://img.shields.io/travis/feross/bittorrent-dht.svg?style=flat
-[travis-url]: https://travis-ci.org/feross/bittorrent-dht
-[npm-image]: https://img.shields.io/npm/v/bittorrent-dht.svg?style=flat
-[npm-url]: https://npmjs.org/package/bittorrent-dht
-[downloads-image]: https://img.shields.io/npm/dm/bittorrent-dht.svg?style=flat
-[downloads-url]: https://npmjs.org/package/bittorrent-dht
+### Simple, robust, generic DHT implementation
 
-### Simple, robust, BitTorrent DHT implementation
+Generic Node.js implementation of the [BitTorrent DHT protocol](http://www.bittorrent.org/beps/bep_0005.html). BitTorrent DHT is the main peer discovery layer for BitTorrent, which allows for trackerless torrents. DHTs are awesome!
 
-Node.js implementation of the [BitTorrent DHT protocol](http://www.bittorrent.org/beps/bep_0005.html). BitTorrent DHT is the main peer discovery layer for BitTorrent, which allows for trackerless torrents. DHTs are awesome!
+This implementation takes out all bittorrent specificities from it's parent [bittorrent-dht](https://github.com/feross/bittorrent-dht)
 
-This module is used by [WebTorrent](http://webtorrent.io).
 
 ### features
 
 - complete implementation of the DHT protocol in JavaScript
-- follows [the spec](http://www.bittorrent.org/beps/bep_0005.html)
-- robust and well-tested (comprehensive test suite, and used by [WebTorrent](http://webtorrent.io) and [peerflix](https://github.com/mafintosh/peerflix))
+- follows [the spec](http://www.bittorrent.org/beps/bep_0005.html) (removing bittorrent specific stuff)
 - efficient recursive lookup algorithm minimizes UDP traffic
 - supports multiple, concurrent lookups using the same routing table
 
-Also see [bittorrent-tracker](https://github.com/feross/bittorrent-tracker).
 
 ### install
 
 ```
-npm install bittorrent-dht
-```
-
-### example
-
-```
-npm install magnet-uri
-```
-
-```javascript
-var DHT    = require('bittorrent-dht')
-var magnet = require('magnet-uri')
-
-var uri = 'magnet:?xt=urn:btih:e3811b9539cacff680e418124272177c47477157'
-var parsed = magnet(uri)
-
-console.log(parsed.infoHash) // 'e3811b9539cacff680e418124272177c47477157'
-
-var dht = new DHT()
-
-dht.listen(20000, function () {
-  console.log('now listening')
-})
-
-dht.on('ready', function () {
-  // DHT is ready to use (i.e. the routing table contains at least K nodes, discovered
-  // via the bootstrap nodes)
-
-  // find peers for the given torrent info hash
-  dht.lookup(parsed.infoHash)
-})
-
-dht.on('peer', function (addr, hash, from) {
-  console.log('found potential peer ' + addr + ' through ' + from)
-})
-
+npm install generic-dht
 ```
 
 ### api
@@ -80,17 +37,17 @@ If `opts` is specified, then the default options (shown below) will be overridde
 ```
 
 
-#### `dht.lookup(infoHash, [callback])`
+#### `dht.lookup(key, [callback])`
 
-Find peers for the given info hash.
+Find values for the given key.
 
-This does a recursive lookup in the DHT. Potential peers that are discovered are emitted
-as `peer` events. See the `peer` event below for more info.
+This does a recursive lookup in the DHT. Potential values that are discovered are emitted
+as `value` events. See the `value` event below for more info.
 
-`infoHash` can be a string or Buffer. `callback` is called when the recursive lookup has
+`key` can be a string or Buffer. `callback` is called when the recursive lookup has
 terminated, and is called with two paramaters. The first is an `Error` or null. The second
 is an array of the K closest nodes. You usually don't need to use this info and can simply
-listen for `peer` events.
+listen for `value` events.
 
 Note: `dht.lookup()` should only be called after the ready event has fired, otherwise the
 lookup may fail because the DHT routing table doesn't contain enough nodes.
@@ -110,28 +67,6 @@ If `onlistening` is defined, it is attached to the `listening` event.
 
 Returns an object containing the address information for the listening socket of the DHT.
 This object contains `address`, `family` and `port` properties.
-
-
-#### `dht.announce(infoHash, port, [callback])`
-
-Announce that the peer, controlling the querying node, is downloading a torrent on a port.
-
-If `dht.announce` is called soon (< 5 minutes) after `dht.lookup`, then the routing table
-generated during the lookup can be re-used, because the "tokens" sent by each node will
-still be valid.
-
-If `dht.announce` is called and there is no cached routing table, then a `dht.lookup` will
-first be performed to discover relevant nodes and get valid "tokens" from each of them.
-This will take longer.
-
-A "token" is an opaque value that must be presented for a node to announce that its
-controlling peer is downloading a torrent. It must present the token received from the
-same queried node in a recent query for peers. This is to prevent malicious hosts from
-signing up other hosts for torrents. **All token management is handled internally by this
-module.**
-
-`callback` will be called when the announce operation has completed, and is called with
-a single parameter that is an `Error` or null.
 
 
 #### `arr = dht.toArray()`
@@ -190,11 +125,10 @@ pass this option.
 Emitted when the DHT is listening.
 
 
-#### `dht.on('peer', function (addr, infoHash, from) { ... })`
+#### `dht.on('value', function (value, key, from) { ... })`
 
-Emitted when a potential peer is found. `addr` is of the form `IP_ADDRESS:PORT`.
-`infoHash` is the torrent info hash of the swarm that the peer belongs to. Emitted
-in response to a `lookup(infoHash)` call.
+Emitted when a potential value is found. `value` is of the form `IP_ADDRESS:PORT`.
+`key` is what was used when calling `lookup(key)` call.
 
 
 #### `dht.on('error', function (err) { ... })`
@@ -207,11 +141,6 @@ Emitted when the DHT has a fatal error.
 #### `dht.on('node', function (addr, nodeId, from) { ... })`
 
 Emitted when the DHT finds a new node.
-
-
-#### `dht.on('announce', function (addr, infoHash) { ... })`
-
-Emitted when a peer announces itself in order to be stored in the DHT.
 
 
 #### `dht.on('warning', function (err) { ... })`
@@ -228,4 +157,4 @@ informational.
 
 ### license
 
-MIT. Copyright (c) [Feross Aboukhadijeh](http://feross.org).
+MIT. Copyright
