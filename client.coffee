@@ -86,11 +86,8 @@ DHT = (opts) ->
     else
       # opts.bootstrap is undefined or true
       @_bootstrap BOOTSTRAP_NODES
-    return
   @on 'ready', ->
     @_debug 'emit ready'
-    return
-  return
 
 ###*
 # Parse saved string
@@ -102,7 +99,6 @@ fromArray = (nodes) ->
   nodes.forEach (node) ->
     if node.id
       node.id = idToBuffer(node.id)
-    return
   nodes
 
 ###*
@@ -150,7 +146,6 @@ parsePeerInfo = (list) ->
   catch err
     debug 'error parsing peer info ' + list
     return []
-  return
 
 ###*
 # Ensure a transacation id is a 16-bit buffer, so it can be sent on the wire as
@@ -275,12 +270,10 @@ DHT::listen = (port, address, onlistening) ->
     address = undefined
   if onlistening
     @once 'listening', onlistening
-  if @_destroyed or @_binding or @listening
-    return
+  return if @_destroyed or @_binding or @listening
   @_binding = true
   @_debug 'listen %s', port
   @socket.bind port, address
-  return
 
 ###*
 # Called when DHT is listening for UDP messages.
@@ -292,7 +285,6 @@ DHT::_onListening = ->
   @_port = @socket.address().port
   @_debug 'emit listening %s', @_port
   @emit 'listening'
-  return
 
 DHT::address = ->
   @socket.address()
@@ -312,10 +304,8 @@ DHT::announce = (infoHash, port, cb) ->
       return cb(err)
     closest.forEach (contact) =>
       @_sendAnnouncePeer contact.addr, infoHash, port, contact.token
-      return
     @_debug 'announce end %s %s', infoHash, port
     cb null
-    return
 
   if !cb
 
@@ -331,7 +321,6 @@ DHT::announce = (infoHash, port, cb) ->
     onClosest null, table.closest({ id: infoHash }, K)
   else
     @lookup infoHash, onClosest
-  return
 
 ###*
 # Destroy and cleanup the DHT.
@@ -364,7 +353,6 @@ DHT::destroy = (cb) ->
   catch err
     # ignore error, socket was either already closed / not yet bound
     cb null
-  return
 
 ###*
 # Add a DHT node to the routing table.
@@ -374,12 +362,10 @@ DHT::destroy = (cb) ->
 ###
 
 DHT::addNode = (addr, nodeId, from) ->
-  if @_destroyed
-    return
+  return if @_destroyed
   nodeId = idToBuffer(nodeId)
-  if @_addrIsSelf(addr)
+  return if @_addrIsSelf(addr)
     # @_debug('skipping adding %s since that is us!', addr)
-    return
   contact =
     id: nodeId
     addr: addr
@@ -387,7 +373,6 @@ DHT::addNode = (addr, nodeId, from) ->
   # TODO: only emit this event for new nodes
   @emit 'node', addr, nodeId, from
   @_debug 'addNode %s %s discovered from %s', idToHexString(nodeId), addr, from
-  return
 
 ###*
 # Remove a DHT node from the routing table.
@@ -395,13 +380,11 @@ DHT::addNode = (addr, nodeId, from) ->
 ###
 
 DHT::removeNode = (nodeId) ->
-  if @_destroyed
-    return
+  return if @_destroyed
   contact = @nodes.get(idToBuffer(nodeId))
   if contact
     @_debug 'removeNode %s %s', contact.nodeId, contact.addr
     @nodes.remove contact
-  return
 
 ###*
 # Store a peer in the DHT. Called when a peer sends a `announce_peer` message.
@@ -410,8 +393,7 @@ DHT::removeNode = (nodeId) ->
 ###
 
 DHT::_addPeer = (addr, infoHash) ->
-  if @_destroyed
-    return
+  return if @_destroyed
   infoHash = idToHexString(infoHash)
   peers = @peers[infoHash]
   if !peers
@@ -423,7 +405,6 @@ DHT::_addPeer = (addr, infoHash) ->
     peers.list.push string2compact(addr)
     @_debug 'addPeer %s %s', addr, infoHash
     @emit 'announce', addr, infoHash
-  return
 
 ###*
 # Remove a peer from the DHT.
@@ -432,8 +413,7 @@ DHT::_addPeer = (addr, infoHash) ->
 ###
 
 DHT::removePeer = (addr, infoHash) ->
-  if @_destroyed
-    return
+  return if @_destroyed
   infoHash = idToHexString(infoHash)
   peers = @peers[infoHash]
   if peers and peers.index[addr]
@@ -445,8 +425,6 @@ DHT::removePeer = (addr, infoHash) ->
         @_debug 'removePeer %s %s', addr, infoHash
         return true
         # abort early
-      return
-  return
 
 ###*
 # Join the DHT network. To join initially, connect to known nodes (either public
@@ -477,8 +455,6 @@ DHT::_bootstrap = (nodes) ->
         if !@ready
           @ready = true
           @emit 'ready'
-        return
-      return
 
     if err
       return @emit('error', err)
@@ -487,7 +463,6 @@ DHT::_bootstrap = (nodes) ->
       ! !contact.id
     ).forEach (contact) =>
       @addNode contact.addr, contact.id, contact.from
-      return
     # get addresses of bootstrap nodes
     addrs = contacts.filter((contact) ->
       !contact.id
@@ -497,17 +472,13 @@ DHT::_bootstrap = (nodes) ->
     lookup()
     # TODO: keep retrying after one failure
     @_bootstrapTimeout = setTimeout((=>
-      if @_destroyed
-        return
+      return if @_destroyed
       # If 0 nodes are in the table after a timeout, retry with bootstrap nodes
       if @nodes.count() == 0
         @_debug 'No DHT bootstrap nodes replied, retry'
         lookup()
-      return
     ), BOOTSTRAP_TIMEOUT)
     @_bootstrapTimeout.unref and @_bootstrapTimeout.unref()
-    return
-  return
 
 ###*
 # Resolve the DNS for nodes whose hostname is a domain name (often the case for
@@ -528,8 +499,6 @@ DHT::_resolveContacts = (contacts, done) ->
             return cb(null, null)
           contact.addr = host + ':' + addrData[1]
           cb null, contact
-          return
-      return
   )
   parallel tasks, (err, contacts) ->
     if err
@@ -539,8 +508,6 @@ DHT::_resolveContacts = (contacts, done) ->
       ! !contact
     )
     done null, contacts
-    return
-  return
 
 ###*
 # Perform a recurive node lookup for the given nodeId. If isFindNode is true, then
@@ -555,12 +522,10 @@ DHT::_resolveContacts = (contacts, done) ->
 DHT::lookup = (id, opts, cb) ->
 
   add = (contact) =>
-    if @_addrIsSelf(contact.addr)
-      return
+    return if @_addrIsSelf(contact.addr)
     if contact.token
       tokenful.add contact
     table.add contact
-    return
 
   query = (addr) =>
     pending += 1
@@ -569,13 +534,10 @@ DHT::lookup = (id, opts, cb) ->
       @_sendFindNode addr, id, onResponse.bind(null, addr)
     else
       @_sendGetPeers addr, id, onResponse.bind(null, addr)
-    return
 
   queryClosest = =>
     @nodes.closest({ id: id }, K).forEach (contact) ->
       query contact.addr
-      return
-    return
 
   # Note: `_sendFindNode` and `_sendGetPeers` will insert newly discovered nodes into
   # the routing table, so that's not done here.
@@ -601,7 +563,6 @@ DHT::lookup = (id, opts, cb) ->
       if res and res.nodes
         res.nodes.forEach (contact) ->
           add contact
-          return
     # find closest unqueried nodes
     candidates = table.closest({ id: id }, K).filter((contact) ->
       !queried[contact.addr]
@@ -616,9 +577,7 @@ DHT::lookup = (id, opts, cb) ->
       @_debug 'K closest nodes are:'
       closest.forEach (contact) =>
         @_debug '  ' + contact.addr + ' ' + idToHexString(contact.id)
-        return
       cb null, closest
-    return
 
   id = idToBuffer(id)
   if typeof opts == 'function'
@@ -644,7 +603,6 @@ DHT::lookup = (id, opts, cb) ->
     peers.forEach (peerAddr) =>
       @_debug 'emit peer %s %s from %s', peerAddr, idHex, 'local'
       @emit 'peer', peerAddr, idHex, 'local'
-      return
   table = new KBucket(
     localNodeId: id
     numberOfNodesPerKBucket: K
@@ -665,7 +623,6 @@ DHT::lookup = (id, opts, cb) ->
   else
     # kick off lookup with nodes in the main table
     queryClosest()
-  return
 
 ###*
 # Called when another node sends a UDP message
@@ -685,13 +642,11 @@ DHT::_onData = (data, rinfo) ->
     errMessage = err.message + ' from ' + addr + ' (' + data + ')'
     @_debug errMessage
     @emit 'warning', new Error(errMessage)
-    return
   type = message.y and message.y.toString()
   if type != MESSAGE_TYPE.QUERY and type != MESSAGE_TYPE.RESPONSE and type != MESSAGE_TYPE.ERROR
     errMessage = 'unknown message type ' + type + ' from ' + addr
     @_debug errMessage
     @emit 'warning', new Error(errMessage)
-    return
   # @_debug('got data %s from %s', JSON.stringify(message), addr)
   # Attempt to add every (valid) node that we see to the routing table.
   # TODO: If they node is already in the table, just update the "last heard from" time
@@ -704,7 +659,6 @@ DHT::_onData = (data, rinfo) ->
     @_onQuery addr, message
   else if type == MESSAGE_TYPE.RESPONSE or type == MESSAGE_TYPE.ERROR
     @_onResponseOrError addr, type, message
-  return
 
 ###*
 # Called when another node sends a query.
@@ -720,7 +674,6 @@ DHT::_onQuery = (addr, message) ->
     errMessage = 'unexpected query type'
     @_debug errMessage
     @_sendError addr, message.t, ERROR_TYPE.METHOD_UNKNOWN, errMessage
-  return
 
 ###*
 # Called when another node sends a response or error.
@@ -746,7 +699,6 @@ DHT::_onResponseOrError = (addr, type, message) ->
       @emit 'warning', new Error(errMessage)
     return
   transaction.cb err, message.r
-  return
 
 ###*
 # Send a UDP message to the given addr.
@@ -765,12 +717,10 @@ DHT::_send = (addr, message, cb) ->
   addrData = addrToIPPort(addr)
   host = addrData[0]
   port = addrData[1]
-  if !(port > 0 and port < 65535)
-    return
+  return if !(port > 0 and port < 65535)
   # @_debug('send %s to %s', JSON.stringify(message), addr)
   message = bencode.encode(message)
   @socket.send message, 0, message.length, port, host, cb
-  return
 
 DHT::_query = (data, addr, cb) ->
   if !data.a
@@ -788,7 +738,6 @@ DHT::_query = (data, addr, cb) ->
   else if data.q == 'get_peers'
     @_debug 'sent get_peers %s to %s', data.a.info_hash.toString('hex'), addr
   @_send addr, message
-  return
 
 ###*
 # Send "ping" query to given addr.
@@ -798,7 +747,6 @@ DHT::_query = (data, addr, cb) ->
 
 DHT::_sendPing = (addr, cb) ->
   @_query { q: 'ping' }, addr, cb
-  return
 
 ###*
 # Called when another node sends a "ping" query.
@@ -813,7 +761,6 @@ DHT::_onPing = (addr, message) ->
     r: id: @nodeId
   @_debug 'got ping from %s', addr
   @_send addr, res
-  return
 
 ###*
 # Send "find_node" query to given addr.
@@ -836,12 +783,9 @@ DHT::_sendFindNode = (addr, nodeId, cb) ->
       res.nodes = parseNodeInfo(res.nodes)
       res.nodes.forEach (node) =>
         @addNode node.addr, node.id, addr
-        return
     cb null, res
-    return
 
   @_query data, addr, onResponse
-  return
 
 ###*
 # Called when another node sends a "find_node" query.
@@ -855,7 +799,6 @@ DHT::_onFindNode = (addr, message) ->
     errMessage = '`find_node` missing required `a.target` field'
     @_debug errMessage
     @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
-    return
   @_debug 'got find_node %s from %s', idToHexString(nodeId), addr
   # Convert nodes to "compact node info" representation
   nodes = convertToNodeInfo(@nodes.closest({ id: nodeId }, K))
@@ -866,7 +809,6 @@ DHT::_onFindNode = (addr, message) ->
       id: @nodeId
       nodes: nodes
   @_send addr, res
-  return
 
 ###*
 # Send "get_peers" query to given addr.
@@ -884,15 +826,12 @@ DHT::_sendGetPeers = (addr, infoHash, cb) ->
       res.nodes = parseNodeInfo(res.nodes)
       res.nodes.forEach (node) =>
         @addNode node.addr, node.id, addr
-        return
     if res.values
       res.values = parsePeerInfo(res.values)
       res.values.forEach (peerAddr) =>
         @_debug 'emit peer %s %s from %s', peerAddr, infoHashHex, addr
         @emit 'peer', peerAddr, infoHashHex, addr
-        return
     cb null, res
-    return
 
   infoHash = idToBuffer(infoHash)
   infoHashHex = idToHexString(infoHash)
@@ -902,7 +841,6 @@ DHT::_sendGetPeers = (addr, infoHash, cb) ->
       id: @nodeId
       info_hash: infoHash
   @_query data, addr, onResponse
-  return
 
 ###*
 # Called when another node sends a "get_peers" query.
@@ -917,7 +855,6 @@ DHT::_onGetPeers = (addr, message) ->
     errMessage = '`get_peers` missing required `a.info_hash` field'
     @_debug errMessage
     @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
-    return
   infoHashHex = idToHexString(infoHash)
   @_debug 'got get_peers %s from %s', infoHashHex, addr
   res =
@@ -936,7 +873,6 @@ DHT::_onGetPeers = (addr, message) ->
     # info" representation
     res.r.nodes = convertToNodeInfo(@nodes.closest({ id: infoHash }, K))
   @_send addr, res
-  return
 
 ###*
 # Send "announce_peer" query to given host and port.
@@ -962,7 +898,6 @@ DHT::_sendAnnouncePeer = (addr, infoHash, port, token, cb) ->
       token: token
       implied_port: 0
   @_query data, addr, cb
-  return
 
 ###*
 # Called when another node sends a "announce_peer" query.
@@ -978,12 +913,10 @@ DHT::_onAnnouncePeer = (addr, message) ->
     errMessage = '`announce_peer` missing required `a.info_hash` field'
     @_debug errMessage
     @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
-    return
   token = message.a and message.a.token
   if !@_isValidToken(token, addrData[0])
     errMessage = 'cannot `announce_peer` with bad token'
     @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
-    return
   port = if message.a.implied_port != 0 then addrData[1] else message.a.port
   # use port in `announce_peer` message
   @_debug 'got announce_peer %s %s from %s with token %s', idToHexString(infoHash), port, addr, idToHexString(token)
@@ -994,7 +927,6 @@ DHT::_onAnnouncePeer = (addr, message) ->
     y: MESSAGE_TYPE.RESPONSE
     r: id: @nodeId
   @_send addr, res
-  return
 
 ###*
 # Send an error to given host and port.
@@ -1017,7 +949,6 @@ DHT::_sendError = (addr, transactionId, code, errMessage) ->
     message.t = transactionId
   @_debug 'sent error %s to %s', JSON.stringify(message), addr
   @_send addr, message
-  return
 
 ###*
 # Get a transaction id, and (optionally) set a function to be called
@@ -1030,13 +961,11 @@ DHT::_getTransactionId = (addr, fn) ->
   onTimeout = ->
     reqs[transactionId] = null
     fn new Error('query timed out')
-    return
 
   onResponse = (err, res) ->
     clearTimeout reqs[transactionId].timeout
     reqs[transactionId] = null
     fn err, res
-    return
 
   fn = once(fn)
   reqs = @transactions[addr]
@@ -1101,7 +1030,6 @@ DHT::_rotateSecrets = ->
     return
   @secrets[1] = @secrets[0]
   @secrets[0] = createSecret()
-  return
 
 ###*
 # Get a string that can be used to initialize and bootstrap the DHT in the
@@ -1128,4 +1056,3 @@ DHT::_debug = ->
   args = [].slice.call(arguments)
   args[0] = '[' + idToHexString(@nodeId).substring(0, 7) + '] ' + args[0]
   debug.apply null, args
-  return
