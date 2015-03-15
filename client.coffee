@@ -488,7 +488,7 @@ DHT::_bootstrap = (nodes) ->
 ###
 
 DHT::_resolveContacts = (contacts, done) ->
-  tasks = contacts.map((contact) ->
+  tasks = contacts.map((contact) =>
     (cb) ->
       addrData = addrToIPPort(contact.addr)
       if isIP(addrData[0])
