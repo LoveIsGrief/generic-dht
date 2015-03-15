@@ -1,5 +1,5 @@
-var Client = require('./client')
-var Server = require('./server')
+Client = require('./client')
+Server = require('./server')
 
 module.exports = Client
 module.exports.Client = Client

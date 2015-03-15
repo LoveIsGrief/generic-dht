@@ -6,7 +6,7 @@
     "name": "LoveIsGrief",
     "email": "LoveIsGrief@users.noreply.github.com"
   },
-  "contributors":[
+  "contributors": [
     {
       "name": "Feross Aboukhadijeh",
       "email": "feross@feross.org",
@@ -31,8 +31,8 @@
     "string2compact": "^1.1.1"
   },
   "devDependencies": {
+    "coffee-script": "^1.9.1",
     "ip": "^0.3.0",
-    "standard": "^2.0.0",
     "tape": "^3.5.0"
   },
   "keywords": [
@@ -51,7 +51,8 @@
     "url": "https://github.com/LoveIsGrief/generic-dht.git"
   },
   "scripts": {
-    "test": "standard && tape test/*.js",
-    "test-live": "tape test/live/*.js"
+    "test": "find test -maxdepth 1 -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
+    "test-live": "find test/live -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
+    "prepublish": "find -maxdepth 1 -name '*.coffee' -exec node_modules/.bin/coffee -bc '{}' \\;"
   }
 }
