@@ -1,3 +1,4 @@
+require('coffee-script/register')
 var crypto = require('crypto')
 var hat = require('hat')
 var ip = require('ip')
