@@ -1,31 +1,29 @@
-require('coffee-script/register')
-var crypto = require('crypto')
-var hat = require('hat')
-var ip = require('ip')
+crypto = require('crypto')
+hat = require('hat')
+ip = require('ip')
 
-exports.failOnWarningOrError = function (t, dht) {
-  dht.on('warning', function (err) { t.fail(err) })
-  dht.on('error', function (err) { t.fail(err) })
-}
+exports.failOnWarningOrError = (t, dht) ->
+  dht.on 'warning', (err) ->
+    t.fail err
+  dht.on 'error', (err) ->
+    t.fail err
 
-exports.randomAddr = function () {
-  var host = ip.toString(crypto.randomBytes(4))
-  var port = crypto.randomBytes(2).readUInt16LE(0)
-  return host + ':' + port
-}
+exports.randomAddr = ->
+  host = ip.toString(crypto.randomBytes(4))
+  port = crypto.randomBytes(2).readUInt16LE(0)
+  host + ':' + port
 
-exports.randomId = function () {
-  return new Buffer(hat(160), 'hex')
-}
+exports.randomId = ->
+  new Buffer(hat(160), 'hex')
 
-exports.addRandomNodes = function (dht, num) {
-  for (var i = 0; i < num; i++) {
-    dht.addNode(exports.randomAddr(), exports.randomId())
-  }
-}
+exports.addRandomNodes = (dht, num) ->
+  i = 0
+  while i < num
+    dht.addNode exports.randomAddr(), exports.randomId()
+    i++
 
-exports.addRandomPeers = function (dht, num) {
-  for (var i = 0; i < num; i++) {
-    dht._addPeer(exports.randomAddr(), exports.randomId())
-  }
-}
+exports.addRandomPeers = (dht, num) ->
+  i = 0
+  while i < num
+    dht._addPeer exports.randomAddr(), exports.randomId()
+    i++
