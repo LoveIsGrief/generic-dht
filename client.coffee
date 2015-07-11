@@ -14,6 +14,7 @@ KBucket = require('k-bucket')
 once = require('once')
 os = require('os')
 parallel = require('run-parallel')
+string2compact = require('string2compact')
 utils = require './utils'
 
 
@@ -108,21 +109,6 @@ class DHT extends EventEmitter
         @_bootstrap BOOTSTRAP_NODES
     @on 'ready', ->
       @_debug 'emit ready'
-
-###*
-# Ensure a transacation id is a 16-bit buffer, so it can be sent on the wire as
-# the transaction id ("t" field).
-# @param  {number|Buffer} transactionId
-# @return {Buffer}
-###
-
-transactionIdToBuffer = (transactionId) ->
-  if Buffer.isBuffer(transactionId)
-    transactionId
-  else
-    buf = new Buffer(2)
-    buf.writeUInt16BE transactionId, 0
-    buf
 
 ###*
 # Ensure info hash or node id is a hex string.
@@ -661,7 +647,7 @@ DHT::_query = (data, addr, cb) ->
     data.a.id = @nodeId
   transactionId = @_getTransactionId(addr, cb)
   message =
-    t: transactionIdToBuffer(transactionId)
+    t: utils.transactionIdToBuffer(transactionId)
     y: MESSAGE_TYPE.QUERY
     q: data.q
     a: data.a
@@ -870,7 +856,7 @@ DHT::_onAnnouncePeer = (addr, message) ->
 
 DHT::_sendError = (addr, transactionId, code, errMessage) ->
   if transactionId and !Buffer.isBuffer(transactionId)
-    transactionId = transactionIdToBuffer(transactionId)
+    transactionId = utils.transactionIdToBuffer(transactionId)
   message =
     y: MESSAGE_TYPE.ERROR
     e: [

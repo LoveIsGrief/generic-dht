@@ -70,10 +70,27 @@ parsePeerInfo = (list) ->
     debug 'error parsing peer info ' + list
     return []
 
+
+###*
+# Ensure a transacation id is a 16-bit buffer, so it can be sent on the wire as
+# the transaction id ("t" field).
+# @param  {number|Buffer} transactionId
+# @return {Buffer}
+###
+
+transactionIdToBuffer = (transactionId) ->
+  if Buffer.isBuffer(transactionId)
+    transactionId
+  else
+    buf = new Buffer(2)
+    buf.writeUInt16BE transactionId, 0
+    buf
+
 module.exports = {
   'convertToNodeInfo': convertToNodeInfo
   'fromArray': fromArray
   'idToBuffer': idToBuffer
   'parseNodeInfo': parseNodeInfo
   'parsePeerInfo': parsePeerInfo
+  'transactionIdToBuffer': transactionIdToBuffer
 }
