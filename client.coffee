@@ -9,7 +9,6 @@ dgram = require('dgram')
 dns = require('dns')
 EventEmitter = require('events').EventEmitter
 hat = require('hat')
-inherits = require('inherits')
 isIP = require('is-ip')
 KBucket = require('k-bucket')
 once = require('once')
@@ -24,90 +23,91 @@ string2compact = require('string2compact')
 # @param {string|Buffer} opts
 ###
 
-DHT = (opts) ->
-  if !(@ instanceof DHT)
-    return new DHT(opts)
-  EventEmitter.call @
-  if !debug.enabled
-    @setMaxListeners 0
-  if !opts
-    opts = {}
-  @nodeId = idToBuffer(opts.nodeId or hat(160))
-  @ipv = opts.ipv or 4
-  @_debug 'new DHT %s', idToHexString(@nodeId)
-  @ready = false
-  @listening = false
-  @_binding = false
-  @_destroyed = false
-  @_port = null
+class DHT extends EventEmitter
+  constructor: (opts) ->
+    if !(@ instanceof DHT)
+      return new DHT(opts)
+    EventEmitter.call @
+    if !debug.enabled
+      @setMaxListeners 0
+    if !opts
+      opts = {}
+    @nodeId = idToBuffer(opts.nodeId or hat(160))
+    @ipv = opts.ipv or 4
+    @_debug 'new DHT %s', idToHexString(@nodeId)
+    @ready = false
+    @listening = false
+    @_binding = false
+    @_destroyed = false
+    @_port = null
 
-  ###*
-  # Query Handlers table
-  # @type {Object} string -> function
-  ###
+    ###*
+    # Query Handlers table
+    # @type {Object} string -> function
+    ###
 
-  @queryHandler =
-    ping: @_onPing
-    find_node: @_onFindNode
-    get_peers: @_onGetPeers
-    announce_peer: @_onAnnouncePeer
+    @queryHandler =
+      ping: @_onPing
+      find_node: @_onFindNode
+      get_peers: @_onGetPeers
+      announce_peer: @_onAnnouncePeer
 
-  ###*
-  # Routing table
-  # @type {KBucket}
-  ###
+    ###*
+    # Routing table
+    # @type {KBucket}
+    ###
 
-  @nodes = new KBucket(
-    localNodeId: @nodeId
-    numberOfNodesPerKBucket: K
-    numberOfNodesToPing: MAX_CONCURRENCY)
+    @nodes = new KBucket(
+      localNodeId: @nodeId
+      numberOfNodesPerKBucket: K
+      numberOfNodesToPing: MAX_CONCURRENCY)
 
-  ###*
-  # Cache of routing tables used during a lookup. Saved in this object so we can access
-  # each node's unique token for announces later.
-  # TODO: Clean up tables after 5 minutes.
-  # @type {Object} infoHash:string -> KBucket
-  ###
+    ###*
+    # Cache of routing tables used during a lookup. Saved in this object so we can access
+    # each node's unique token for announces later.
+    # TODO: Clean up tables after 5 minutes.
+    # @type {Object} infoHash:string -> KBucket
+    ###
 
-  @tables = {}
+    @tables = {}
 
-  ###*
-  # Pending transactions (unresolved requests to peers)
-  # @type {Object} addr:string -> array of pending transactions
-  ###
+    ###*
+    # Pending transactions (unresolved requests to peers)
+    # @type {Object} addr:string -> array of pending transactions
+    ###
 
-  @transactions = {}
+    @transactions = {}
 
-  ###*
-  # Peer address data (tracker storage)
-  # @type {Object} infoHash:string -> Object {index:Object, list:Array.<Buffer>}
-  ###
+    ###*
+    # Peer address data (tracker storage)
+    # @type {Object} infoHash:string -> Object {index:Object, list:Array.<Buffer>}
+    ###
 
-  @peers = {}
-  # Create socket and attach listeners
-  @socket = dgram.createSocket('udp' + @ipv)
-  @socket.on 'message', @_onData.bind(@)
-  @socket.on 'listening', @_onListening.bind(@)
-  @socket.on 'error', ->
-  # throw away errors
-  @_rotateSecrets()
-  @_rotateInterval = setInterval(@_rotateSecrets.bind(@), ROTATE_INTERVAL)
-  @_rotateInterval.unref and @_rotateInterval.unref()
-  process.nextTick =>
-    if opts.bootstrap == false
-      # Emit `ready` right away because the user does not want to bootstrap. Presumably,
-      # the user will call addNode() to populate the routing table manually.
-      @ready = true
-      @emit 'ready'
-    else if typeof opts.bootstrap == 'string'
-      @_bootstrap [ opts.bootstrap ]
-    else if Array.isArray(opts.bootstrap)
-      @_bootstrap fromArray(opts.bootstrap)
-    else
-      # opts.bootstrap is undefined or true
-      @_bootstrap BOOTSTRAP_NODES
-  @on 'ready', ->
-    @_debug 'emit ready'
+    @peers = {}
+    # Create socket and attach listeners
+    @socket = dgram.createSocket('udp' + @ipv)
+    @socket.on 'message', @_onData.bind(@)
+    @socket.on 'listening', @_onListening.bind(@)
+    @socket.on 'error', ->
+    # throw away errors
+    @_rotateSecrets()
+    @_rotateInterval = setInterval(@_rotateSecrets.bind(@), ROTATE_INTERVAL)
+    @_rotateInterval.unref and @_rotateInterval.unref()
+    process.nextTick =>
+      if opts.bootstrap == false
+        # Emit `ready` right away because the user does not want to bootstrap. Presumably,
+        # the user will call addNode() to populate the routing table manually.
+        @ready = true
+        @emit 'ready'
+      else if typeof opts.bootstrap == 'string'
+        @_bootstrap [ opts.bootstrap ]
+      else if Array.isArray(opts.bootstrap)
+        @_bootstrap fromArray(opts.bootstrap)
+      else
+        # opts.bootstrap is undefined or true
+        @_bootstrap BOOTSTRAP_NODES
+    @on 'ready', ->
+      @_debug 'emit ready'
 
 ###*
 # Parse saved string
@@ -250,7 +250,6 @@ for i of interfaces
     if face.family == 'IPv6'
       LOCAL_HOSTS[6].push face.address
     j++
-inherits DHT, EventEmitter
 
 ###*
 # Start listening for UDP messages on given port.
