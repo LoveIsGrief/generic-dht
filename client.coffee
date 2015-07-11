@@ -33,7 +33,7 @@ class DHT extends EventEmitter
       @setMaxListeners 0
     if !opts
       opts = {}
-    @nodeId = idToBuffer(opts.nodeId or hat(160))
+    @nodeId = utils.idToBuffer(opts.nodeId or hat(160))
     @ipv = opts.ipv or 4
     @_debug 'new DHT %s', idToHexString(@nodeId)
     @ready = false
@@ -170,18 +170,6 @@ transactionIdToBuffer = (transactionId) ->
     buf = new Buffer(2)
     buf.writeUInt16BE transactionId, 0
     buf
-
-###*
-# Ensure info hash or node id is a Buffer.
-# @param  {string|Buffer} id
-# @return {Buffer}
-###
-
-idToBuffer = (id) ->
-  if Buffer.isBuffer(id)
-    id
-  else
-    new Buffer(id, 'hex')
 
 ###*
 # Ensure info hash or node id is a hex string.
@@ -354,7 +342,7 @@ DHT::destroy = (cb) ->
 
 DHT::addNode = (addr, nodeId, from) ->
   return if @_destroyed
-  nodeId = idToBuffer(nodeId)
+  nodeId = utils.idToBuffer(nodeId)
   return if @_addrIsSelf(addr)
     # @_debug('skipping adding %s since that is us!', addr)
   contact =
@@ -372,7 +360,7 @@ DHT::addNode = (addr, nodeId, from) ->
 
 DHT::removeNode = (nodeId) ->
   return if @_destroyed
-  contact = @nodes.get(idToBuffer(nodeId))
+  contact = @nodes.get(utils.idToBuffer(nodeId))
   if contact
     @_debug 'removeNode %s %s', contact.nodeId, contact.addr
     @nodes.remove contact
@@ -570,7 +558,7 @@ DHT::lookup = (id, opts, cb) ->
         @_debug '  ' + contact.addr + ' ' + idToHexString(contact.id)
       cb null, closest
 
-  id = idToBuffer(id)
+  id = utils.idToBuffer(id)
   if typeof opts == 'function'
     cb = opts
     opts = {}
@@ -824,7 +812,7 @@ DHT::_sendGetPeers = (addr, infoHash, cb) ->
         @emit 'peer', peerAddr, infoHashHex, addr
     cb null, res
 
-  infoHash = idToBuffer(infoHash)
+  infoHash = utils.idToBuffer(infoHash)
   infoHashHex = idToHexString(infoHash)
   data =
     q: 'get_peers'
@@ -875,7 +863,7 @@ DHT::_onGetPeers = (addr, message) ->
 ###
 
 DHT::_sendAnnouncePeer = (addr, infoHash, port, token, cb) ->
-  infoHash = idToBuffer(infoHash)
+  infoHash = utils.idToBuffer(infoHash)
   if !cb
 
     cb = ->

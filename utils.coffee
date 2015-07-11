@@ -22,4 +22,5 @@ fromArray = (nodes) ->
 
 module.exports = {
   'fromArray': fromArray
+  'idToBuffer': idToBuffer
 }
