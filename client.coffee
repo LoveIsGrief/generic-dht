@@ -1,3 +1,23 @@
+# allow override for chrome apps (chrome-dgram)
+addrToIPPort = require('addr-to-ip-port')
+bencode = require('bencode')
+bufferEqual = require('buffer-equal')
+compact2string = require('compact2string')
+crypto = require('crypto')
+debug = require('debug')('bittorrent-dht')
+dgram = require('dgram')
+dns = require('dns')
+EventEmitter = require('events').EventEmitter
+hat = require('hat')
+inherits = require('inherits')
+isIP = require('is-ip')
+KBucket = require('k-bucket')
+once = require('once')
+os = require('os')
+parallel = require('run-parallel')
+string2compact = require('string2compact')
+
+
 ###*
 # A DHT client implementation. The DHT is the main peer discovery layer for BitTorrent,
 # which allows for trackerless torrents.
@@ -65,7 +85,7 @@ DHT = (opts) ->
 
   @peers = {}
   # Create socket and attach listeners
-  @socket = module.exports.dgram.createSocket('udp' + @ipv)
+  @socket = dgram.createSocket('udp' + @ipv)
   @socket.on 'message', @_onData.bind(@)
   @socket.on 'listening', @_onListening.bind(@)
   @socket.on 'error', ->
@@ -192,24 +212,7 @@ sha1 = (buf) ->
   crypto.createHash('sha1').update(buf).digest()
 
 module.exports = DHT
-module.exports.dgram = require('dgram')
-# allow override for chrome apps (chrome-dgram)
-addrToIPPort = require('addr-to-ip-port')
-bencode = require('bencode')
-bufferEqual = require('buffer-equal')
-compact2string = require('compact2string')
-crypto = require('crypto')
-debug = require('debug')('bittorrent-dht')
-dns = require('dns')
-EventEmitter = require('events').EventEmitter
-hat = require('hat')
-inherits = require('inherits')
-isIP = require('is-ip')
-KBucket = require('k-bucket')
-once = require('once')
-os = require('os')
-parallel = require('run-parallel')
-string2compact = require('string2compact')
+
 BOOTSTRAP_NODES = [
   'router.bittorrent.com:6881'
   'router.utorrent.com:6881'
@@ -1056,3 +1059,5 @@ DHT::_debug = ->
   args = [].slice.call(arguments)
   args[0] = '[' + idToHexString(@nodeId).substring(0, 7) + '] ' + args[0]
   debug.apply null, args
+
+
