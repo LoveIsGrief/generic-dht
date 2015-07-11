@@ -14,7 +14,6 @@ KBucket = require('k-bucket')
 once = require('once')
 os = require('os')
 parallel = require('run-parallel')
-string2compact = require('string2compact')
 utils = require './utils'
 
 
@@ -109,20 +108,6 @@ class DHT extends EventEmitter
         @_bootstrap BOOTSTRAP_NODES
     @on 'ready', ->
       @_debug 'emit ready'
-
-###*
-# Convert "contacts" from the routing table into "compact node info" representation.
-# @param  {Array.<Object>} contacts
-# @return {Buffer}
-###
-
-convertToNodeInfo = (contacts) ->
-  Buffer.concat contacts.map((contact) ->
-    Buffer.concat [
-      contact.id
-      string2compact(contact.addr)
-    ]
-  )
 
 ###*
 # Parse "compact node info" representation into "contacts".
@@ -780,7 +765,7 @@ DHT::_onFindNode = (addr, message) ->
     @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
   @_debug 'got find_node %s from %s', idToHexString(nodeId), addr
   # Convert nodes to "compact node info" representation
-  nodes = convertToNodeInfo(@nodes.closest({ id: nodeId }, K))
+  nodes = utils.convertToNodeInfo(@nodes.closest({ id: nodeId }, K))
   res =
     t: message.t
     y: MESSAGE_TYPE.RESPONSE
@@ -850,7 +835,7 @@ DHT::_onGetPeers = (addr, message) ->
   else
     # No peers, so return the K closest nodes instead. Convert nodes to "compact node
     # info" representation
-    res.r.nodes = convertToNodeInfo(@nodes.closest({ id: infoHash }, K))
+    res.r.nodes = utils.convertToNodeInfo(@nodes.closest({ id: infoHash }, K))
   @_send addr, res
 
 ###*
