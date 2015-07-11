@@ -1,4 +1,5 @@
 compact2string = require('compact2string')
+crypto = require('crypto')
 string2compact = require('string2compact')
 
 
@@ -78,6 +79,10 @@ parsePeerInfo = (list) ->
     debug 'error parsing peer info ' + list
     return []
 
+# Return sha1 hash **as a buffer**
+sha1 = (buf) ->
+  crypto.createHash('sha1').update(buf).digest()
+
 
 ###*
 # Ensure a transacation id is a 16-bit buffer, so it can be sent on the wire as
@@ -94,7 +99,6 @@ transactionIdToBuffer = (transactionId) ->
     buf
 
 
-
 module.exports = {
   'convertToNodeInfo': convertToNodeInfo
   'fromArray': fromArray
@@ -102,5 +106,6 @@ module.exports = {
   'idToHexString': idToHexString
   'parseNodeInfo': parseNodeInfo
   'parsePeerInfo': parsePeerInfo
+  'sha1': sha1
   'transactionIdToBuffer': transactionIdToBuffer
 }

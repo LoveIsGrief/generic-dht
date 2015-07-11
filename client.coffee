@@ -110,11 +110,6 @@ class DHT extends EventEmitter
     @on 'ready', ->
       @_debug 'emit ready'
 
-# Return sha1 hash **as a buffer**
-
-sha1 = (buf) ->
-  crypto.createHash('sha1').update(buf).digest()
-
 module.exports = DHT
 
 BOOTSTRAP_NODES = [
@@ -897,7 +892,7 @@ DHT::_getTransactionId = (addr, fn) ->
 DHT::_generateToken = (host, secret) ->
   if !secret
     secret = @secrets[0]
-  sha1 Buffer.concat([
+  utils.sha1 Buffer.concat([
     new Buffer(host, 'utf8')
     secret
   ])
