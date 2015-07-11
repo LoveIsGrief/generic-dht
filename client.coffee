@@ -15,6 +15,7 @@ once = require('once')
 os = require('os')
 parallel = require('run-parallel')
 string2compact = require('string2compact')
+utils = require './utils'
 
 
 ###*
@@ -102,24 +103,12 @@ class DHT extends EventEmitter
       else if typeof opts.bootstrap == 'string'
         @_bootstrap [ opts.bootstrap ]
       else if Array.isArray(opts.bootstrap)
-        @_bootstrap fromArray(opts.bootstrap)
+        @_bootstrap utils.fromArray(opts.bootstrap)
       else
         # opts.bootstrap is undefined or true
         @_bootstrap BOOTSTRAP_NODES
     @on 'ready', ->
       @_debug 'emit ready'
-
-###*
-# Parse saved string
-# @param  {Array.<Object>} nodes
-# @return {Buffer}
-###
-
-fromArray = (nodes) ->
-  nodes.forEach (node) ->
-    if node.id
-      node.id = idToBuffer(node.id)
-  nodes
 
 ###*
 # Convert "contacts" from the routing table into "compact node info" representation.
