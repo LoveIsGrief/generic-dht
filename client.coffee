@@ -15,6 +15,47 @@ parallel = require('run-parallel')
 string2compact = require('string2compact')
 utils = require './utils'
 
+#
+# Constants
+#
+
+BOOTSTRAP_NODES = [
+  'router.bittorrent.com:6881'
+  'router.utorrent.com:6881'
+  'dht.transmissionbt.com:6881'
+]
+BOOTSTRAP_TIMEOUT = 10000
+K = 20
+# number of nodes per bucket
+MAX_CONCURRENCY = 6
+# α from Kademlia paper
+ROTATE_INTERVAL = 5 * 60 * 1000
+# rotate secrets every 5 minutes
+SECRET_ENTROPY = 160
+# entropy of token secrets
+SEND_TIMEOUT = 2000
+MESSAGE_TYPE =
+  QUERY: 'q'
+  RESPONSE: 'r'
+  ERROR: 'e'
+ERROR_TYPE =
+  GENERIC: 201
+  SERVER: 202
+  PROTOCOL: 203
+  METHOD_UNKNOWN: 204
+LOCAL_HOSTS =
+  4: []
+  6: []
+interfaces = os.networkInterfaces()
+for i of interfaces
+  j = 0
+  while j < interfaces[i].length
+    face = interfaces[i][j]
+    if face.family == 'IPv4'
+      LOCAL_HOSTS[4].push face.address
+    if face.family == 'IPv6'
+      LOCAL_HOSTS[6].push face.address
+    j++
 
 ###*
 # A DHT client implementation. The DHT is the main peer discovery layer for BitTorrent,
@@ -23,6 +64,12 @@ utils = require './utils'
 ###
 
 class DHT extends EventEmitter
+
+  # These constants will also be exported
+  @ERROR_TYPE = ERROR_TYPE
+  @K = K
+  @MESSAGE_TYPE = MESSAGE_TYPE
+
   constructor: (opts) ->
     if !(@ instanceof DHT)
       return new DHT(opts)
@@ -107,46 +154,6 @@ class DHT extends EventEmitter
         @_bootstrap BOOTSTRAP_NODES
     @on 'ready', ->
       @_debug 'emit ready'
-
-module.exports = DHT
-
-BOOTSTRAP_NODES = [
-  'router.bittorrent.com:6881'
-  'router.utorrent.com:6881'
-  'dht.transmissionbt.com:6881'
-]
-BOOTSTRAP_TIMEOUT = 10000
-K = module.exports.K = 20
-# number of nodes per bucket
-MAX_CONCURRENCY = 6
-# α from Kademlia paper
-ROTATE_INTERVAL = 5 * 60 * 1000
-# rotate secrets every 5 minutes
-SECRET_ENTROPY = 160
-# entropy of token secrets
-SEND_TIMEOUT = 2000
-MESSAGE_TYPE = module.exports.MESSAGE_TYPE =
-  QUERY: 'q'
-  RESPONSE: 'r'
-  ERROR: 'e'
-ERROR_TYPE = module.exports.ERROR_TYPE =
-  GENERIC: 201
-  SERVER: 202
-  PROTOCOL: 203
-  METHOD_UNKNOWN: 204
-LOCAL_HOSTS =
-  4: []
-  6: []
-interfaces = os.networkInterfaces()
-for i of interfaces
-  j = 0
-  while j < interfaces[i].length
-    face = interfaces[i][j]
-    if face.family == 'IPv4'
-      LOCAL_HOSTS[4].push face.address
-    if face.family == 'IPv6'
-      LOCAL_HOSTS[6].push face.address
-    j++
 
 ###*
 # Start listening for UDP messages on given port.
@@ -956,4 +963,4 @@ DHT::_debug = ->
   args[0] = '[' + utils.idToHexString(@nodeId).substring(0, 7) + '] ' + args[0]
   debug.apply null, args
 
-
+module.exports = DHT
