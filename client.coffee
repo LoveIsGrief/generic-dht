@@ -35,7 +35,7 @@ class DHT extends EventEmitter
       opts = {}
     @nodeId = utils.idToBuffer(opts.nodeId or hat(160))
     @ipv = opts.ipv or 4
-    @_debug 'new DHT %s', idToHexString(@nodeId)
+    @_debug 'new DHT %s', utils.idToHexString(@nodeId)
     @ready = false
     @listening = false
     @_binding = false
@@ -109,18 +109,6 @@ class DHT extends EventEmitter
         @_bootstrap BOOTSTRAP_NODES
     @on 'ready', ->
       @_debug 'emit ready'
-
-###*
-# Ensure info hash or node id is a hex string.
-# @param  {string|Buffer} id
-# @return {Buffer}
-###
-
-idToHexString = (id) ->
-  if Buffer.isBuffer(id)
-    id.toString 'hex'
-  else
-    id
 
 # Return sha1 hash **as a buffer**
 
@@ -232,7 +220,7 @@ DHT::announce = (infoHash, port, cb) ->
   if @_destroyed
     return cb(new Error('dht is destroyed'))
   @_debug 'announce %s %s', infoHash, port
-  infoHashHex = idToHexString(infoHash)
+  infoHashHex = utils.idToHexString(infoHash)
   # TODO: it would be nice to not use a table when a lookup is in progress
   table = @tables[infoHashHex]
   if table
@@ -290,7 +278,7 @@ DHT::addNode = (addr, nodeId, from) ->
   @nodes.add contact
   # TODO: only emit this event for new nodes
   @emit 'node', addr, nodeId, from
-  @_debug 'addNode %s %s discovered from %s', idToHexString(nodeId), addr, from
+  @_debug 'addNode %s %s discovered from %s', utils.idToHexString(nodeId), addr, from
 
 ###*
 # Remove a DHT node from the routing table.
@@ -312,7 +300,7 @@ DHT::removeNode = (nodeId) ->
 
 DHT::_addPeer = (addr, infoHash) ->
   return if @_destroyed
-  infoHash = idToHexString(infoHash)
+  infoHash = utils.idToHexString(infoHash)
   peers = @peers[infoHash]
   if !peers
     peers = @peers[infoHash] =
@@ -332,7 +320,7 @@ DHT::_addPeer = (addr, infoHash) ->
 
 DHT::removePeer = (addr, infoHash) ->
   return if @_destroyed
-  infoHash = idToHexString(infoHash)
+  infoHash = utils.idToHexString(infoHash)
   peers = @peers[infoHash]
   if peers and peers.index[addr]
     peers.index[addr] = null
@@ -465,7 +453,7 @@ DHT::lookup = (id, opts, cb) ->
       return cb(new Error('dht is destroyed'))
     pending -= 1
     nodeId = res and res.id
-    nodeIdHex = idToHexString(nodeId)
+    nodeIdHex = utils.idToHexString(nodeId)
     # ignore errors - they are just timeouts
     if err
       @_debug 'got lookup error: %s', err.message
@@ -494,7 +482,7 @@ DHT::lookup = (id, opts, cb) ->
       closest = (if opts.findNode then table else tokenful).closest({ id: id }, K)
       @_debug 'K closest nodes are:'
       closest.forEach (contact) =>
-        @_debug '  ' + contact.addr + ' ' + idToHexString(contact.id)
+        @_debug '  ' + contact.addr + ' ' + utils.idToHexString(contact.id)
       cb null, closest
 
   id = utils.idToBuffer(id)
@@ -512,7 +500,7 @@ DHT::lookup = (id, opts, cb) ->
     return cb(new Error('dht is destroyed'))
   if !@listening
     return @listen(@lookup.bind(@, id, opts, cb))
-  idHex = idToHexString(id)
+  idHex = utils.idToHexString(id)
   @_debug 'lookup %s %s', (if opts.findNode then '(find_node)' else '(get_peers)'), idHex
   # Return local peers, if we have any in our table
   peers = @peers[idHex] and @peers[idHex]
@@ -571,7 +559,7 @@ DHT::_onData = (data, rinfo) ->
   nodeId = message.r and message.r.id or message.a and message.a.id
   if nodeId
     # TODO: verify that this a valid length for a nodeId
-    # @_debug('adding (potentially) new node %s %s', idToHexString(nodeId), addr)
+    # @_debug('adding (potentially) new node %s %s', utils.idToHexString(nodeId), addr)
     @addNode addr, nodeId, addr
   if type == MESSAGE_TYPE.QUERY
     @_onQuery addr, message
@@ -717,7 +705,7 @@ DHT::_onFindNode = (addr, message) ->
     errMessage = '`find_node` missing required `a.target` field'
     @_debug errMessage
     @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
-  @_debug 'got find_node %s from %s', idToHexString(nodeId), addr
+  @_debug 'got find_node %s from %s', utils.idToHexString(nodeId), addr
   # Convert nodes to "compact node info" representation
   nodes = utils.convertToNodeInfo(@nodes.closest({ id: nodeId }, K))
   res =
@@ -752,7 +740,7 @@ DHT::_sendGetPeers = (addr, infoHash, cb) ->
     cb null, res
 
   infoHash = utils.idToBuffer(infoHash)
-  infoHashHex = idToHexString(infoHash)
+  infoHashHex = utils.idToHexString(infoHash)
   data =
     q: 'get_peers'
     a:
@@ -773,7 +761,7 @@ DHT::_onGetPeers = (addr, message) ->
     errMessage = '`get_peers` missing required `a.info_hash` field'
     @_debug errMessage
     @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
-  infoHashHex = idToHexString(infoHash)
+  infoHashHex = utils.idToHexString(infoHash)
   @_debug 'got get_peers %s from %s', infoHashHex, addr
   res =
     t: message.t
@@ -826,7 +814,7 @@ DHT::_sendAnnouncePeer = (addr, infoHash, port, token, cb) ->
 DHT::_onAnnouncePeer = (addr, message) ->
   errMessage = undefined
   addrData = addrToIPPort(addr)
-  infoHash = idToHexString(message.a and message.a.info_hash)
+  infoHash = utils.idToHexString(message.a and message.a.info_hash)
   if !infoHash
     errMessage = '`announce_peer` missing required `a.info_hash` field'
     @_debug errMessage
@@ -837,7 +825,7 @@ DHT::_onAnnouncePeer = (addr, message) ->
     @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
   port = if message.a.implied_port != 0 then addrData[1] else message.a.port
   # use port in `announce_peer` message
-  @_debug 'got announce_peer %s %s from %s with token %s', idToHexString(infoHash), port, addr, idToHexString(token)
+  @_debug 'got announce_peer %s %s from %s with token %s', utils.idToHexString(infoHash), port, addr, utils.idToHexString(token)
   @_addPeer addrData[0] + ':' + port, infoHash
   # send acknowledgement
   res =
@@ -972,7 +960,7 @@ DHT::_addrIsSelf = (addr) ->
 
 DHT::_debug = ->
   args = [].slice.call(arguments)
-  args[0] = '[' + idToHexString(@nodeId).substring(0, 7) + '] ' + args[0]
+  args[0] = '[' + utils.idToHexString(@nodeId).substring(0, 7) + '] ' + args[0]
   debug.apply null, args
 
 

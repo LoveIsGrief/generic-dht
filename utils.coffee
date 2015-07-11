@@ -7,7 +7,6 @@ string2compact = require('string2compact')
 # @param  {Array.<Object>} contacts
 # @return {Buffer}
 ###
-
 convertToNodeInfo = (contacts) ->
   Buffer.concat contacts.map((contact) ->
     Buffer.concat [
@@ -28,6 +27,17 @@ idToBuffer = (id) ->
     new Buffer(id, 'hex')
 
 ###*
+# Ensure info hash or node id is a hex string.
+# @param  {string|Buffer} id
+# @return {Buffer}
+###
+idToHexString = (id) ->
+  if Buffer.isBuffer(id)
+    id.toString 'hex'
+  else
+    id
+
+###*
 # Parse saved string
 # @param  {Array.<Object>} nodes
 # @return {Buffer}
@@ -43,7 +53,6 @@ fromArray = (nodes) ->
 # @param  {Buffer} nodeInfo
 # @return {Array.<string>}  array of
 ###
-
 parseNodeInfo = (nodeInfo) ->
   contacts = []
   try
@@ -62,7 +71,6 @@ parseNodeInfo = (nodeInfo) ->
 # @param  {Array.<Buffer>} list
 # @return {Array.<string>}
 ###
-
 parsePeerInfo = (list) ->
   try
     return list.map(compact2string)
@@ -77,7 +85,6 @@ parsePeerInfo = (list) ->
 # @param  {number|Buffer} transactionId
 # @return {Buffer}
 ###
-
 transactionIdToBuffer = (transactionId) ->
   if Buffer.isBuffer(transactionId)
     transactionId
@@ -86,10 +93,13 @@ transactionIdToBuffer = (transactionId) ->
     buf.writeUInt16BE transactionId, 0
     buf
 
+
+
 module.exports = {
   'convertToNodeInfo': convertToNodeInfo
   'fromArray': fromArray
   'idToBuffer': idToBuffer
+  'idToHexString': idToHexString
   'parseNodeInfo': parseNodeInfo
   'parsePeerInfo': parsePeerInfo
   'transactionIdToBuffer': transactionIdToBuffer
