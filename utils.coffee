@@ -1,3 +1,4 @@
+compact2string = require('compact2string')
 string2compact = require('string2compact')
 
 
@@ -37,10 +38,29 @@ fromArray = (nodes) ->
       node.id = idToBuffer(node.id)
   nodes
 
+###*
+# Parse "compact node info" representation into "contacts".
+# @param  {Buffer} nodeInfo
+# @return {Array.<string>}  array of
+###
+
+parseNodeInfo = (nodeInfo) ->
+  contacts = []
+  try
+    i = 0
+    while i < nodeInfo.length
+      contacts.push
+        id: nodeInfo.slice(i, i + 20)
+        addr: compact2string(nodeInfo.slice(i + 20, i + 26))
+      i += 26
+  catch err
+    debug 'error parsing node info ' + nodeInfo
+  contacts
 
 
 module.exports = {
+  'convertToNodeInfo': convertToNodeInfo
   'fromArray': fromArray
   'idToBuffer': idToBuffer
-  'convertToNodeInfo': convertToNodeInfo
+  'parseNodeInfo': parseNodeInfo
 }

@@ -109,24 +109,6 @@ class DHT extends EventEmitter
     @on 'ready', ->
       @_debug 'emit ready'
 
-###*
-# Parse "compact node info" representation into "contacts".
-# @param  {Buffer} nodeInfo
-# @return {Array.<string>}  array of
-###
-
-parseNodeInfo = (nodeInfo) ->
-  contacts = []
-  try
-    i = 0
-    while i < nodeInfo.length
-      contacts.push
-        id: nodeInfo.slice(i, i + 20)
-        addr: compact2string(nodeInfo.slice(i + 20, i + 26))
-      i += 26
-  catch err
-    debug 'error parsing node info ' + nodeInfo
-  contacts
 
 ###*
 # Parse list of "compact addr info" into an array of addr "host:port" strings.
@@ -744,7 +726,7 @@ DHT::_sendFindNode = (addr, nodeId, cb) ->
     if err
       return cb(err)
     if res.nodes
-      res.nodes = parseNodeInfo(res.nodes)
+      res.nodes = utils.parseNodeInfo(res.nodes)
       res.nodes.forEach (node) =>
         @addNode node.addr, node.id, addr
     cb null, res
@@ -787,7 +769,7 @@ DHT::_sendGetPeers = (addr, infoHash, cb) ->
     if err
       return cb(err)
     if res.nodes
-      res.nodes = parseNodeInfo(res.nodes)
+      res.nodes = utils.parseNodeInfo(res.nodes)
       res.nodes.forEach (node) =>
         @addNode node.addr, node.id, addr
     if res.values
