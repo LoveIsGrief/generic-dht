@@ -109,20 +109,6 @@ class DHT extends EventEmitter
     @on 'ready', ->
       @_debug 'emit ready'
 
-
-###*
-# Parse list of "compact addr info" into an array of addr "host:port" strings.
-# @param  {Array.<Buffer>} list
-# @return {Array.<string>}
-###
-
-parsePeerInfo = (list) ->
-  try
-    return list.map(compact2string)
-  catch err
-    debug 'error parsing peer info ' + list
-    return []
-
 ###*
 # Ensure a transacation id is a 16-bit buffer, so it can be sent on the wire as
 # the transaction id ("t" field).
@@ -545,7 +531,7 @@ DHT::lookup = (id, opts, cb) ->
   # Return local peers, if we have any in our table
   peers = @peers[idHex] and @peers[idHex]
   if peers
-    peers = parsePeerInfo(peers.list)
+    peers = utils.parsePeerInfo(peers.list)
     peers.forEach (peerAddr) =>
       @_debug 'emit peer %s %s from %s', peerAddr, idHex, 'local'
       @emit 'peer', peerAddr, idHex, 'local'
@@ -773,7 +759,7 @@ DHT::_sendGetPeers = (addr, infoHash, cb) ->
       res.nodes.forEach (node) =>
         @addNode node.addr, node.id, addr
     if res.values
-      res.values = parsePeerInfo(res.values)
+      res.values = utils.parsePeerInfo(res.values)
       res.values.forEach (peerAddr) =>
         @_debug 'emit peer %s %s from %s', peerAddr, infoHashHex, addr
         @emit 'peer', peerAddr, infoHashHex, addr

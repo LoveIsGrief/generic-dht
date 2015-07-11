@@ -57,10 +57,23 @@ parseNodeInfo = (nodeInfo) ->
     debug 'error parsing node info ' + nodeInfo
   contacts
 
+###*
+# Parse list of "compact addr info" into an array of addr "host:port" strings.
+# @param  {Array.<Buffer>} list
+# @return {Array.<string>}
+###
+
+parsePeerInfo = (list) ->
+  try
+    return list.map(compact2string)
+  catch err
+    debug 'error parsing peer info ' + list
+    return []
 
 module.exports = {
   'convertToNodeInfo': convertToNodeInfo
   'fromArray': fromArray
   'idToBuffer': idToBuffer
   'parseNodeInfo': parseNodeInfo
+  'parsePeerInfo': parsePeerInfo
 }
