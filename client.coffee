@@ -2,8 +2,6 @@
 addrToIPPort = require('addr-to-ip-port')
 bencode = require('bencode')
 bufferEqual = require('buffer-equal')
-compact2string = require('compact2string')
-crypto = require('crypto')
 debug = require('debug')('bittorrent-dht')
 dgram = require('dgram')
 dns = require('dns')
