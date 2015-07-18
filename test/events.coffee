@@ -26,30 +26,6 @@ test '`node` event fires for each added node (10000x)', (t) ->
       t.end()
   common.addRandomNodes dht, 10000
 
-test '`announce` event fires for each added peer (100x)', (t) ->
-  dht = new DHT(bootstrap: false)
-  common.failOnWarningOrError t, dht
-  numPeers = 0
-
-  dht.on 'announce', ->
-    numPeers += 1
-    if numPeers == 100
-      t.pass '100 peers added, 100 `announce` events emitted'
-      t.end()
-  common.addRandomPeers dht, 100
-
-test '`announce` event fires for each added peer (10000x)', (t) ->
-  dht = new DHT(bootstrap: false)
-  common.failOnWarningOrError t, dht
-  numPeers = 0
-
-  dht.on 'announce', ->
-    numPeers += 1
-    if numPeers == 10000
-      t.pass '10000 peers added, 10000 `announce` events emitted'
-      t.end()
-  common.addRandomPeers dht, 10000
-
 test '`listening` event fires', (t) ->
   t.plan 2
   dht = new DHT(bootstrap: false)

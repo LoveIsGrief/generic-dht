@@ -95,8 +95,6 @@ class DHT extends EventEmitter
     @queryHandler =
       ping: @_onPing
       find_node: @_onFindNode
-      get_peers: @_onGetPeers
-      announce_peer: @_onAnnouncePeer
 
     ###*
     # Routing table
@@ -129,7 +127,6 @@ class DHT extends EventEmitter
     # @type {Object} infoHash:string -> Object {index:Object, list:Array.<Buffer>}
     ###
 
-    @peers = {}
     # Create socket and attach listeners
     @socket = dgram.createSocket('udp' + @ipv)
     @socket.on 'message', @_onData.bind(@)
@@ -195,38 +192,6 @@ DHT::_onListening = ->
 DHT::address = ->
   @socket.address()
 
-###*
-# Announce that the peer, controlling the querying node, is downloading a torrent on a
-# port.
-# @param  {string|Buffer} infoHash
-# @param  {number} port
-# @param  {function=} cb
-###
-
-DHT::announce = (infoHash, port, cb) ->
-
-  onClosest = (err, closest) =>
-    if err
-      return cb(err)
-    closest.forEach (contact) =>
-      @_sendAnnouncePeer contact.addr, infoHash, port, contact.token
-    @_debug 'announce end %s %s', infoHash, port
-    cb null
-
-  if !cb
-
-    cb = ->
-
-  if @_destroyed
-    return cb(new Error('dht is destroyed'))
-  @_debug 'announce %s %s', infoHash, port
-  infoHashHex = utils.idToHexString(infoHash)
-  # TODO: it would be nice to not use a table when a lookup is in progress
-  table = @tables[infoHashHex]
-  if table
-    onClosest null, table.closest({ id: infoHash }, K)
-  else
-    @lookup infoHash, onClosest
 
 ###*
 # Destroy and cleanup the DHT.
@@ -250,7 +215,6 @@ DHT::destroy = (cb) ->
   @nodes = null
   @tables = null
   @transactions = null
-  @peers = null
   clearTimeout @_bootstrapTimeout
   clearInterval @_rotateInterval
   @socket.on 'close', cb
@@ -291,46 +255,6 @@ DHT::removeNode = (nodeId) ->
   if contact
     @_debug 'removeNode %s %s', contact.nodeId, contact.addr
     @nodes.remove contact
-
-###*
-# Store a peer in the DHT. Called when a peer sends a `announce_peer` message.
-# @param {string} addr
-# @param {Buffer|string} infoHash
-###
-
-DHT::_addPeer = (addr, infoHash) ->
-  return if @_destroyed
-  infoHash = utils.idToHexString(infoHash)
-  peers = @peers[infoHash]
-  if !peers
-    peers = @peers[infoHash] =
-      index: {}
-      list: []
-  if !peers.index[addr]
-    peers.index[addr] = true
-    peers.list.push string2compact(addr)
-    @_debug 'addPeer %s %s', addr, infoHash
-    @emit 'announce', addr, infoHash
-
-###*
-# Remove a peer from the DHT.
-# @param  {string} addr
-# @param  {Buffer|string} infoHash
-###
-
-DHT::removePeer = (addr, infoHash) ->
-  return if @_destroyed
-  infoHash = utils.idToHexString(infoHash)
-  peers = @peers[infoHash]
-  if peers and peers.index[addr]
-    peers.index[addr] = null
-    compactPeerInfo = string2compact(addr)
-    peers.list.some (peer, index) ->
-      if bufferEqual(peer, compactPeerInfo)
-        peers.list.splice index, 1
-        @_debug 'removePeer %s %s', addr, infoHash
-        return true
-        # abort early
 
 ###*
 # Join the DHT network. To join initially, connect to known nodes (either public
@@ -436,10 +360,7 @@ DHT::lookup = (id, opts, cb) ->
   query = (addr) =>
     pending += 1
     queried[addr] = true
-    if opts.findNode
-      @_sendFindNode addr, id, onResponse.bind(null, addr)
-    else
-      @_sendGetPeers addr, id, onResponse.bind(null, addr)
+    @_sendFindNode addr, id, onResponse.bind(null, addr)
 
   queryClosest = =>
     @nodes.closest({ id: id }, K).forEach (contact) ->
@@ -501,14 +422,7 @@ DHT::lookup = (id, opts, cb) ->
   if !@listening
     return @listen(@lookup.bind(@, id, opts, cb))
   idHex = utils.idToHexString(id)
-  @_debug 'lookup %s %s', (if opts.findNode then '(find_node)' else '(get_peers)'), idHex
-  # Return local peers, if we have any in our table
-  peers = @peers[idHex] and @peers[idHex]
-  if peers
-    peers = utils.parsePeerInfo(peers.list)
-    peers.forEach (peerAddr) =>
-      @_debug 'emit peer %s %s from %s', peerAddr, idHex, 'local'
-      @emit 'peer', peerAddr, idHex, 'local'
+  @_debug 'lookup %s %s', '(find_node)' , idHex
   table = new KBucket(
     localNodeId: id
     numberOfNodesPerKBucket: K
@@ -640,9 +554,7 @@ DHT::_query = (data, addr, cb) ->
     q: data.q
     a: data.a
   if data.q == 'find_node'
-    @_debug 'sent find_node %s to %s', data.a.target.toString('hex'), addr
-  else if data.q == 'get_peers'
-    @_debug 'sent get_peers %s to %s', data.a.info_hash.toString('hex'), addr
+    @_debug 'sent %s %s to %s', data.q, data.a.target.toString('hex'), addr
   @_send addr, message
 
 ###*
@@ -717,124 +629,6 @@ DHT::_onFindNode = (addr, message) ->
   @_send addr, res
 
 ###*
-# Send "get_peers" query to given addr.
-# @param {string} addr
-# @param {Buffer|string} infoHash
-# @param {function} cb called with response
-###
-
-DHT::_sendGetPeers = (addr, infoHash, cb) ->
-
-  onResponse = (err, res) =>
-    if err
-      return cb(err)
-    if res.nodes
-      res.nodes = utils.parseNodeInfo(res.nodes)
-      res.nodes.forEach (node) =>
-        @addNode node.addr, node.id, addr
-    if res.values
-      res.values = utils.parsePeerInfo(res.values)
-      res.values.forEach (peerAddr) =>
-        @_debug 'emit peer %s %s from %s', peerAddr, infoHashHex, addr
-        @emit 'peer', peerAddr, infoHashHex, addr
-    cb null, res
-
-  infoHash = utils.idToBuffer(infoHash)
-  infoHashHex = utils.idToHexString(infoHash)
-  data =
-    q: 'get_peers'
-    a:
-      id: @nodeId
-      info_hash: infoHash
-  @_query data, addr, onResponse
-
-###*
-# Called when another node sends a "get_peers" query.
-# @param  {string} addr
-# @param  {Object} message
-###
-
-DHT::_onGetPeers = (addr, message) ->
-  addrData = addrToIPPort(addr)
-  infoHash = message.a and message.a.info_hash
-  if !infoHash
-    errMessage = '`get_peers` missing required `a.info_hash` field'
-    @_debug errMessage
-    @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
-  infoHashHex = utils.idToHexString(infoHash)
-  @_debug 'got get_peers %s from %s', infoHashHex, addr
-  res =
-    t: message.t
-    y: MESSAGE_TYPE.RESPONSE
-    r:
-      id: @nodeId
-      token: @_generateToken(addrData[0])
-  peers = @peers[infoHashHex] and @peers[infoHashHex].list
-  if peers
-    # We know of peers for the target info hash. Peers are stored as an array of
-    # compact peer info, so return it as-is.
-    res.r.values = peers
-  else
-    # No peers, so return the K closest nodes instead. Convert nodes to "compact node
-    # info" representation
-    res.r.nodes = utils.convertToNodeInfo(@nodes.closest({ id: infoHash }, K))
-  @_send addr, res
-
-###*
-# Send "announce_peer" query to given host and port.
-# @param {string} addr
-# @param {Buffer|string} infoHash
-# @param {number} port
-# @param {Buffer} token
-# @param {function=} cb called with response
-###
-
-DHT::_sendAnnouncePeer = (addr, infoHash, port, token, cb) ->
-  infoHash = utils.idToBuffer(infoHash)
-  if !cb
-
-    cb = ->
-
-  data =
-    q: 'announce_peer'
-    a:
-      id: @nodeId
-      info_hash: infoHash
-      port: port
-      token: token
-      implied_port: 0
-  @_query data, addr, cb
-
-###*
-# Called when another node sends a "announce_peer" query.
-# @param  {string} addr
-# @param  {Object} message
-###
-
-DHT::_onAnnouncePeer = (addr, message) ->
-  errMessage = undefined
-  addrData = addrToIPPort(addr)
-  infoHash = utils.idToHexString(message.a and message.a.info_hash)
-  if !infoHash
-    errMessage = '`announce_peer` missing required `a.info_hash` field'
-    @_debug errMessage
-    @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
-  token = message.a and message.a.token
-  if !@_isValidToken(token, addrData[0])
-    errMessage = 'cannot `announce_peer` with bad token'
-    @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
-  port = if message.a.implied_port != 0 then addrData[1] else message.a.port
-  # use port in `announce_peer` message
-  @_debug 'got announce_peer %s %s from %s with token %s', utils.idToHexString(infoHash), port, addr, utils.idToHexString(token)
-  @_addPeer addrData[0] + ':' + port, infoHash
-  # send acknowledgement
-  res =
-    t: message.t
-    y: MESSAGE_TYPE.RESPONSE
-    r: id: @nodeId
-  @_send addr, res
-
-###*
 # Send an error to given host and port.
 # @param  {string} addr
 # @param  {Buffer|number} transactionId
@@ -884,36 +678,6 @@ DHT::_getTransactionId = (addr, fn) ->
     cb: onResponse
     timeout: setTimeout(onTimeout, SEND_TIMEOUT)
   transactionId
-
-###*
-# Generate token (for response to `get_peers` query). Tokens are the SHA1 hash of
-# the IP address concatenated onto a secret that changes every five minutes. Tokens up
-# to ten minutes old are accepted.
-# @param {string} host
-# @param {Buffer=} secret force token to use this secret, otherwise use current one
-# @return {Buffer}
-###
-
-DHT::_generateToken = (host, secret) ->
-  if !secret
-    secret = @secrets[0]
-  utils.sha1 Buffer.concat([
-    new Buffer(host, 'utf8')
-    secret
-  ])
-
-###*
-# Checks if a token is valid for a given node's IP address.
-#
-# @param  {Buffer} token
-# @param  {string} host
-# @return {boolean}
-###
-
-DHT::_isValidToken = (token, host) ->
-  validToken0 = @_generateToken(host, @secrets[0])
-  validToken1 = @_generateToken(host, @secrets[1])
-  bufferEqual(token, validToken0) or bufferEqual(token, validToken1)
 
 ###*
 # Rotate secrets. Secrets are rotated every 5 minutes and tokens up to ten minutes

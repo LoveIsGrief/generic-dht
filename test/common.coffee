@@ -21,9 +21,3 @@ exports.addRandomNodes = (dht, num) ->
   while i < num
     dht.addNode exports.randomAddr(), exports.randomId()
     i++
-
-exports.addRandomPeers = (dht, num) ->
-  i = 0
-  while i < num
-    dht._addPeer exports.randomAddr(), exports.randomId()
-    i++
