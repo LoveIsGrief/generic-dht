@@ -67,18 +67,6 @@ parseNodeInfo = (nodeInfo) ->
     debug 'error parsing node info ' + nodeInfo
   contacts
 
-###*
-# Parse list of "compact addr info" into an array of addr "host:port" strings.
-# @param  {Array.<Buffer>} list
-# @return {Array.<string>}
-###
-parsePeerInfo = (list) ->
-  try
-    return list.map(compact2string)
-  catch err
-    debug 'error parsing peer info ' + list
-    return []
-
 # Return sha1 hash **as a buffer**
 sha1 = (buf) ->
   crypto.createHash('sha1').update(buf).digest()
@@ -105,7 +93,6 @@ module.exports = {
   'idToBuffer': idToBuffer
   'idToHexString': idToHexString
   'parseNodeInfo': parseNodeInfo
-  'parsePeerInfo': parsePeerInfo
   'sha1': sha1
   'transactionIdToBuffer': transactionIdToBuffer
 }
