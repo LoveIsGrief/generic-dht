@@ -1,4 +1,4 @@
-# generic-dht
+# generic-dht (WIP)
 
 ### Simple, robust, generic DHT implementation
 
