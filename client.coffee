@@ -70,14 +70,12 @@ class DHT extends EventEmitter
   @K = K
   @MESSAGE_TYPE = MESSAGE_TYPE
 
-  constructor: (opts) ->
+  constructor: (opts={}) ->
     if !(@ instanceof DHT)
       return new DHT(opts)
     EventEmitter.call @
     if !debug.enabled
       @setMaxListeners 0
-    if !opts
-      opts = {}
     @nodeId = utils.idToBuffer(opts.nodeId or hat(160))
     @ipv = opts.ipv or 4
     @_debug 'new DHT %s', utils.idToHexString(@nodeId)
