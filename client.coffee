@@ -99,10 +99,10 @@ class DHT extends EventEmitter
     # @type {KBucket}
     ###
 
-    @nodes = new KBucket(
+    @nodes = new KBucket
       localNodeId: @nodeId
       numberOfNodesPerKBucket: K
-      numberOfNodesToPing: MAX_CONCURRENCY)
+      numberOfNodesToPing: MAX_CONCURRENCY
 
     ###*
     # Cache of routing tables used during a lookup. Saved in this object so we can access
