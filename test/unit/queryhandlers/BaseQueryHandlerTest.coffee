@@ -73,3 +73,38 @@ test "BaseQueryHandler", (t)->
 
         t.doesNotThrow func, /Cannot handle queries/, "No query name in message dict"
         t.end()
+  t.test "getArgs", (t)->
+    class ExtendedQueryHandler extends BaseQueryHandler
+      @VALUES = [
+        "one"
+        "two"
+        "three"
+      ]
+      @NAME = "extend"
+
+    eqh = new ExtendedQueryHandler()
+    t.test "good args", (t)->
+      argsDict = {
+        "one": 1
+        "two": 2
+        "three": 3
+      }
+      expected = [1, 2, 3]
+      func = eqh.getArgs.bind eqh, argsDict
+      t.doesNotThrow func, expected, "Right number of args with right names"
+      t.end()
+    t.test "good but not enough args", (t)->
+      argsDict = {
+        "one": 1
+        "two": 2
+      }
+      func = eqh.getArgs.bind eqh, argsDict
+      t.throws func, /'three' expected to be in arguments/, "'three' arg is missing"
+      t.end()
+    t.test "good but not enough args", (t)->
+      argsDict = {
+        "not good": "herp"
+      }
+      func = eqh.getArgs.bind eqh, argsDict
+      t.throws func, /'one' expected to be in arguments/, "not even one good argument"
+      t.end()

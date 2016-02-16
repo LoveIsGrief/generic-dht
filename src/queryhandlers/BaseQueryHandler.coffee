@@ -35,13 +35,12 @@ class BaseQueryHandler
     if message.q != @name
       throw new TypeError "Cannot handle queries of type #{message.q}"
 
-  getArgs: (message)->
-    a = message.a
-    argNames = Object.keys a
+  getArgs: (argsDict)->
+    argNames = Object.keys argsDict
     for value in @values
       if value not in argNames
-        throw new TypeError "#{value} expected to be in arguments ('a') dictionary keys"
-      a[value]
+        throw new TypeError "'#{value}' expected to be in arguments ('a') dictionary keys"
+      argsDict[value]
 
   ###
   @param message {Object} a valid message
@@ -49,7 +48,7 @@ class BaseQueryHandler
   ###
   handle: (message)->
     @checkMessage()
-    @main.apply @, @getArgs message
+    @main.apply @, @getArgs message.a
 
   ###
   Override this in subclasses and give it the same number of arguments as you defined in `VALUES`
