@@ -44,7 +44,7 @@ class BaseQueryHandler
 
   ###
   @param message {Object} a valid message
-  @returns {Object} Reponse message
+  @returns {Object} Reponse dict
   ###
   handle: (message)->
     @checkMessage message
@@ -53,7 +53,7 @@ class BaseQueryHandler
 
   ###
   Override this in subclasses and give it the same number of arguments as you defined in `VALUES`
-  @returns {Object} Response message
+  @returns {Object} Response dict
   ###
   main: ->
     throw new NotImplementedError(@, "main")
