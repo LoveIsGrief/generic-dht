@@ -47,14 +47,15 @@ class BaseQueryHandler
   @returns {Object} Reponse message
   ###
   handle: (message)->
-    @checkMessage()
-    @main.apply @, @getArgs message.a
+    @checkMessage message
+    args = @getArgs message.a
+    @main.apply @, args
 
   ###
   Override this in subclasses and give it the same number of arguments as you defined in `VALUES`
   @returns {Object} Response message
   ###
   main: ->
-    throw new NotImplementedError("Implement #{@constructor.name}.main")
+    throw new NotImplementedError(@, "main")
 
 module.exports = BaseQueryHandler

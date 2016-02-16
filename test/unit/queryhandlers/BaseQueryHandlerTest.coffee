@@ -108,3 +108,43 @@ test "BaseQueryHandler", (t)->
       func = eqh.getArgs.bind eqh, argsDict
       t.throws func, /'one' expected to be in arguments/, "not even one good argument"
       t.end()
+  t.test "handle", (t)->
+    t.test "not implemented", (t)->
+      goodMessage = {
+        a:
+          one: 1
+          two: 2
+          three: 3
+        q: "__REPLACE_THIS__"
+      }
+      func = bqh.handle.bind bqh, goodMessage
+      t.throws func, /not implemented/, "To be subclassed"
+      t.end()
+
+
+    t.test "subclassed", (t)->
+      class TestQueryHandler extends BaseQueryHandler
+        @VALUES = [
+          "one"
+          "two"
+          "three"
+        ]
+        @NAME = "test"
+
+        main: (one, two, three)->
+          return arguments
+      tqh = new TestQueryHandler()
+
+
+      goodMessage = {
+        a:
+          one: 1
+          two: 2
+          three: 3
+        q: "test"
+      }
+      t.test "good message", (t)->
+        func = tqh.handle.bind tqh, goodMessage
+        expected = [1, 2, 3]
+        t.doesNotThrow func, expected, "call with correct values"
+        t.end()
