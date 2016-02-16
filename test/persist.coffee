@@ -1,6 +1,7 @@
 common = require('./common')
 DHT = require('../')
-test = require('tape')
+test = common.test
+
 test 'persist dht', (t) ->
   t.plan 1
   dht1 = new DHT(bootstrap: false)

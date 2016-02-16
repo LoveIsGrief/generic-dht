@@ -1,6 +1,7 @@
 common = require('./common')
 DHT = require('../')
-test = require('tape')
+
+test = common.test
 
 test 'explicitly set nodeId', (t) ->
   nodeId = common.randomId()
