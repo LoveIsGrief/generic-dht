@@ -36,13 +36,13 @@ test '`find_node` query for exact match (with one in table)', (t) ->
   dht1.listen ->
     dht2._sendFindNode '127.0.0.1:' + dht1.address().port, targetNodeId, (err, res) ->
       t.error err
-      t.deepEqual res.id, dht1.nodeId
+      t.deepEqual res.id, dht1.nodeId, "same nodeid"
       t.deepEqual res.nodes.map((node) ->
         node.addr
       ), [
         '255.255.255.255:6969'
         '127.0.0.1:' + dht2.address().port
-      ]
+      ], "same nodes"
       dht1.destroy()
       dht2.destroy()
 
