@@ -32,8 +32,8 @@ class BaseQueryHandler
     if not message.q
       throw new TypeError "Query name ('q') not found in message"
 
-    if message.q != @name
-      throw new TypeError "Cannot handle queries of type #{message.q}"
+    if String(message.q) isnt @name
+      throw new TypeError "Cannot handle queries of type '#{message.q}'. '#{@name}' expected"
 
   getArgs: (argsDict)->
     argNames = Object.keys argsDict
