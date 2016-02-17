@@ -32,7 +32,7 @@ class FindNodeQueryHandler extends BaseQueryHandler
   @NAME = "find_node"
 
   ###
-  @param nodeId {Buffer|String} ID of the node handling the response
+  @param nodeId {Buffer, String} ID of the node handling the response
   @param nodes {KBucket} a DHT node's known nodes
   ###
   constructor: (@nodeId, @nodes)->
