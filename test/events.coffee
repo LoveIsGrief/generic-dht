@@ -1,6 +1,6 @@
 common = require('./common')
 DHT = require('../')
-test = require('tape')
+test = common.test
 
 test '`node` event fires for each added node (100x)', (t) ->
   dht = new DHT(bootstrap: false)
