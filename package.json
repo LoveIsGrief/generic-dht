@@ -51,7 +51,9 @@
     "url": "https://github.com/LoveIsGrief/generic-dht.git"
   },
   "scripts": {
-    "test": "find test -maxdepth 1 -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
+    "test": "find test/unit test/integration -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
+    "test-unit": "find test/unit -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
+    "test-integration": "find test/integration -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
     "test-live": "find test/live -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
     "prepublish": "find -maxdepth 1 -name '*.coffee' -exec node_modules/.bin/coffee -bc --no-header '{}' \\;"
   }

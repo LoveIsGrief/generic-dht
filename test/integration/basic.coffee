@@ -1,5 +1,5 @@
-common = require('./common')
-DHT = require('../')
+common = require('./../common')
+DHT = require('../../')
 
 test = common.test
 
