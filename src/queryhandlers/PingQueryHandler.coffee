@@ -18,7 +18,7 @@ arguments:  {"id" : "<querying nodes id>"}
 response: {"id" : "<queried nodes id>"}
 
 ###
-class PingNodeQueryHandler extends BaseQueryHandler
+class PingQueryHandler extends BaseQueryHandler
 
   @VALUES = [
     "id"
@@ -38,4 +38,4 @@ class PingNodeQueryHandler extends BaseQueryHandler
   main: (id)->
     {id: @nodeId}
 
-module.exports = PingNodeQueryHandler
+module.exports = PingQueryHandler
