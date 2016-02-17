@@ -14,6 +14,7 @@ os = require('os')
 parallel = require('run-parallel')
 string2compact = require('string2compact')
 utils = require './utils'
+BaseQueryHandler = require "./src/queryhandlers/BaseQueryHandler"
 FindNodeQueryHandler = require "./src/queryhandlers/FindNodeQueryHandler"
 PingQueryHandler = require "./src/queryhandlers/PingQueryHandler"
 
@@ -501,8 +502,8 @@ DHT::_onData = (data, rinfo) ->
 DHT::_onQuery = (addr, message) ->
   query = message.q.toString()
   handler = @queryHandler[query]
-  @_debug "handler:", handler.name
-  if typeof handler == "object"
+  if handler instanceof BaseQueryHandler
+    @_debug "handler:", handler.name
     return handler.handle message
   else
     throw new TypeError "unexpected query type"
