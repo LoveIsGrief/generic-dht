@@ -32,11 +32,11 @@ test "FindNodeQueryHandler", (t)->
       localNodeId: "local node"
       numberOfNodesPerKBucket: K
       numberOfNodesToPing: MAX_CONCURRENCY
-
-    queryHandler = new FindNodeQueryHandler nodes
+    nodeId = "some node id"
+    queryHandler = new FindNodeQueryHandler nodeId, nodes
     func = queryHandler.handle.bind queryHandler, message
     expected = {
-      id: "unknown node"
+      id: nodeId
       nodes: []
     }
     t.doesNotThrow func, expected, "executed 'find_node'"
