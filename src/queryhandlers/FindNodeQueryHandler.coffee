@@ -1,8 +1,6 @@
 BaseQueryHandler = require("./BaseQueryHandler")
 utils = require("../utils")
-
-# TODO move this to a `constants.coffee`
-K = 20
+constants = require("../constants")
 
 ###
 
@@ -44,7 +42,7 @@ class FindNodeQueryHandler extends BaseQueryHandler
   ###
   main: (id, target)->
     # Convert nodes to "compact node info" representation
-    nodes = utils.convertToNodeInfo(@nodes.closest({id: target}, K))
+    nodes = utils.convertToNodeInfo(@nodes.closest({id: target}, constants.K))
     {
       id: @nodeId
       nodes: nodes
