@@ -14,9 +14,12 @@ os = require('os')
 parallel = require('run-parallel')
 string2compact = require('string2compact')
 utils = require './utils'
+FindNodeQueryHandler = require "./src/queryhandlers/FindNodeQueryHandler"
+PingQueryHandler = require "./src/queryhandlers/PingQueryHandler"
 
 #
 # Constants
+# TODO move them to a `constants.coffee` or make them configurable
 #
 
 BOOTSTRAP_NODES = [
@@ -86,15 +89,6 @@ class DHT extends EventEmitter
     @_port = null
 
     ###*
-    # Query Handlers table
-    # @type {Object} string -> function
-    ###
-
-    @queryHandler =
-      ping: @_onPing
-      find_node: @_onFindNode
-
-    ###*
     # Routing table
     # @type {KBucket}
     ###
@@ -103,6 +97,15 @@ class DHT extends EventEmitter
       localNodeId: @nodeId
       numberOfNodesPerKBucket: K
       numberOfNodesToPing: MAX_CONCURRENCY
+
+    ###*
+    # Query Handlers table
+    # @type {Object} string -> function
+    ###
+
+    @queryHandler =
+      ping: new PingQueryHandler(@nodeId)
+      find_node: new FindNodeQueryHandler(@nodeId, @nodes)
 
     ###*
     # Cache of routing tables used during a lookup. Saved in this object so we can access
@@ -474,7 +477,18 @@ DHT::_onData = (data, rinfo) ->
     # @_debug('adding (potentially) new node %s %s', utils.idToHexString(nodeId), addr)
     @addNode addr, nodeId, addr
   if type == MESSAGE_TYPE.QUERY
-    @_onQuery addr, message
+    try
+      result =
+        t: message.t
+        y: MESSAGE_TYPE.RESPONSE
+        r: @_onQuery(addr, message)
+    catch e
+      console.error(e)
+      message = e.message
+      @_debug message
+    if result
+      @_send addr, result
+
   else if type == MESSAGE_TYPE.RESPONSE or type == MESSAGE_TYPE.ERROR
     @_onResponseOrError addr, type, message
 
@@ -486,12 +500,12 @@ DHT::_onData = (data, rinfo) ->
 
 DHT::_onQuery = (addr, message) ->
   query = message.q.toString()
-  if typeof @queryHandler[query] == 'function'
-    @queryHandler[query].call @, addr, message
+  handler = @queryHandler[query]
+  @_debug "handler:", handler.name
+  if typeof handler == "object"
+    return handler.handle message
   else
-    errMessage = 'unexpected query type'
-    @_debug errMessage
-    @_sendError addr, message.t, ERROR_TYPE.METHOD_UNKNOWN, errMessage
+    throw new TypeError "unexpected query type"
 
 ###*
 # Called when another node sends a response or error.
@@ -565,20 +579,6 @@ DHT::_sendPing = (addr, cb) ->
   @_query { q: 'ping' }, addr, cb
 
 ###*
-# Called when another node sends a "ping" query.
-# @param  {string} addr
-# @param  {Object} message
-###
-
-DHT::_onPing = (addr, message) ->
-  res =
-    t: message.t
-    y: MESSAGE_TYPE.RESPONSE
-    r: id: @nodeId
-  @_debug 'got ping from %s', addr
-  @_send addr, res
-
-###*
 # Send "find_node" query to given addr.
 # @param {string} addr
 # @param {Buffer} nodeId
@@ -602,29 +602,6 @@ DHT::_sendFindNode = (addr, nodeId, cb) ->
     cb null, res
 
   @_query data, addr, onResponse
-
-###*
-# Called when another node sends a "find_node" query.
-# @param  {string} addr
-# @param  {Object} message
-###
-
-DHT::_onFindNode = (addr, message) ->
-  nodeId = message.a and message.a.target
-  if !nodeId
-    errMessage = '`find_node` missing required `a.target` field'
-    @_debug errMessage
-    @_sendError addr, message.t, ERROR_TYPE.PROTOCOL, errMessage
-  @_debug 'got find_node %s from %s', utils.idToHexString(nodeId), addr
-  # Convert nodes to "compact node info" representation
-  nodes = utils.convertToNodeInfo(@nodes.closest({ id: nodeId }, K))
-  res =
-    t: message.t
-    y: MESSAGE_TYPE.RESPONSE
-    r:
-      id: @nodeId
-      nodes: nodes
-  @_send addr, res
 
 ###*
 # Send an error to given host and port.
