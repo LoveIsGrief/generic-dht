@@ -18,12 +18,10 @@ BaseQueryHandler = require "./queryhandlers/BaseQueryHandler"
 FindNodeQueryHandler = require "./queryhandlers/FindNodeQueryHandler"
 PingQueryHandler = require "./queryhandlers/PingQueryHandler"
 
-###*
-# A DHT client implementation. The DHT is the main peer discovery layer for BitTorrent,
-# which allows for trackerless torrents.
-# @param {string|Buffer} opts
 ###
-
+A DHT client implementation. The DHT is the main peer discovery layer for BitTorrent,
+which allows for trackerless torrents.
+###
 class DHT extends EventEmitter
 
   # These constants will also be exported
@@ -31,6 +29,10 @@ class DHT extends EventEmitter
   @K = constants.K
   @MESSAGE_TYPE = constants.MESSAGE_TYPE
 
+  ###
+  Make a new node
+  @param {string|Buffer} opts
+  ###
   constructor: (opts={}) ->
     if !(@ instanceof DHT)
       return new DHT(opts)
