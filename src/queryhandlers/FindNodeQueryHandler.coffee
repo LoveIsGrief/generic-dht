@@ -43,7 +43,7 @@ class FindNodeQueryHandler extends BaseQueryHandler
   @param target {String} id of target node
   ###
   main: (id, target)->
-# Convert nodes to "compact node info" representation
+    # Convert nodes to "compact node info" representation
     nodes = utils.convertToNodeInfo(@nodes.closest({id: target}, K))
     {
       id: @nodeId
