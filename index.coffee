@@ -1,6 +1,3 @@
-Client = require('./client')
-Server = require('./server')
+DHT = require('./src/DHT')
 
-module.exports = Client
-module.exports.Client = Client
-module.exports.Server = Server
+module.exports = DHT

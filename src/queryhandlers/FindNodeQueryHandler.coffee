@@ -1,5 +1,5 @@
 BaseQueryHandler = require("./BaseQueryHandler")
-utils = require("../../utils")
+utils = require("../utils")
 
 # TODO move this to a `constants.coffee`
 K = 20

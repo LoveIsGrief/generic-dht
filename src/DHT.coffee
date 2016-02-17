@@ -14,9 +14,9 @@ os = require('os')
 parallel = require('run-parallel')
 string2compact = require('string2compact')
 utils = require './utils'
-BaseQueryHandler = require "./src/queryhandlers/BaseQueryHandler"
-FindNodeQueryHandler = require "./src/queryhandlers/FindNodeQueryHandler"
-PingQueryHandler = require "./src/queryhandlers/PingQueryHandler"
+BaseQueryHandler = require "./queryhandlers/BaseQueryHandler"
+FindNodeQueryHandler = require "./queryhandlers/FindNodeQueryHandler"
+PingQueryHandler = require "./queryhandlers/PingQueryHandler"
 
 #
 # Constants
