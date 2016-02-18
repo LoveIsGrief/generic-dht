@@ -3,4 +3,5 @@ default: []
 prepublish:
   description: "Before publishing to npm"
   tasks:
+    - coffeelint
     - coffee

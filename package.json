@@ -22,6 +22,7 @@
     "buffer-equal": "^0.0.1",
     "compact2string": "^1.2.0",
     "debug": "^2.1.0",
+    "grunt-coffeelint": "0.0.15",
     "hat": "^0.0.3",
     "is-ip": "^1.0.0",
     "k-bucket": "^0.4.2",
