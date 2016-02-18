@@ -1,7 +1,6 @@
 # allow override for chrome apps (chrome-dgram)
 addrToIPPort = require('addr-to-ip-port')
 bencode = require('bencode')
-bufferEqual = require('buffer-equal')
 debug = require('debug')('bittorrent-dht')
 dgram = require('dgram')
 dns = require('dns')
@@ -14,66 +13,26 @@ os = require('os')
 parallel = require('run-parallel')
 string2compact = require('string2compact')
 utils = require './utils'
-BaseQueryHandler = require "./src/queryhandlers/BaseQueryHandler"
-FindNodeQueryHandler = require "./src/queryhandlers/FindNodeQueryHandler"
-PingQueryHandler = require "./src/queryhandlers/PingQueryHandler"
+constants = require './constants'
+BaseQueryHandler = require "./queryhandlers/BaseQueryHandler"
+FindNodeQueryHandler = require "./queryhandlers/FindNodeQueryHandler"
+PingQueryHandler = require "./queryhandlers/PingQueryHandler"
 
-#
-# Constants
-# TODO move them to a `constants.coffee` or make them configurable
-#
-
-BOOTSTRAP_NODES = [
-  'router.bittorrent.com:6881'
-  'router.utorrent.com:6881'
-  'dht.transmissionbt.com:6881'
-]
-BOOTSTRAP_TIMEOUT = 10000
-K = 20
-# number of nodes per bucket
-MAX_CONCURRENCY = 6
-# α from Kademlia paper
-ROTATE_INTERVAL = 5 * 60 * 1000
-# rotate secrets every 5 minutes
-SECRET_ENTROPY = 160
-# entropy of token secrets
-SEND_TIMEOUT = 2000
-MESSAGE_TYPE =
-  QUERY: 'q'
-  RESPONSE: 'r'
-  ERROR: 'e'
-ERROR_TYPE =
-  GENERIC: 201
-  SERVER: 202
-  PROTOCOL: 203
-  METHOD_UNKNOWN: 204
-LOCAL_HOSTS =
-  4: []
-  6: []
-interfaces = os.networkInterfaces()
-for i of interfaces
-  j = 0
-  while j < interfaces[i].length
-    face = interfaces[i][j]
-    if face.family == 'IPv4'
-      LOCAL_HOSTS[4].push face.address
-    if face.family == 'IPv6'
-      LOCAL_HOSTS[6].push face.address
-    j++
-
-###*
-# A DHT client implementation. The DHT is the main peer discovery layer for BitTorrent,
-# which allows for trackerless torrents.
-# @param {string|Buffer} opts
 ###
-
+A DHT client implementation. The DHT is the main peer discovery layer for BitTorrent,
+which allows for trackerless torrents.
+###
 class DHT extends EventEmitter
 
   # These constants will also be exported
-  @ERROR_TYPE = ERROR_TYPE
-  @K = K
-  @MESSAGE_TYPE = MESSAGE_TYPE
+  @ERROR_TYPE = constants.ERROR_TYPE
+  @K = constants.K
+  @MESSAGE_TYPE = constants.MESSAGE_TYPE
 
+  ###
+  Make a new node
+  @param {string|Buffer} opts
+  ###
   constructor: (opts={}) ->
     if !(@ instanceof DHT)
       return new DHT(opts)
@@ -96,8 +55,8 @@ class DHT extends EventEmitter
 
     @nodes = new KBucket
       localNodeId: @nodeId
-      numberOfNodesPerKBucket: K
-      numberOfNodesToPing: MAX_CONCURRENCY
+      numberOfNodesPerKBucket: constants.K
+      numberOfNodesToPing: constants.MAX_CONCURRENCY
 
     ###*
     # Query Handlers table
@@ -136,7 +95,7 @@ class DHT extends EventEmitter
     @socket.on 'error', ->
     # throw away errors
     @_rotateSecrets()
-    @_rotateInterval = setInterval(@_rotateSecrets.bind(@), ROTATE_INTERVAL)
+    @_rotateInterval = setInterval(@_rotateSecrets.bind(@), constants.ROTATE_INTERVAL)
     @_rotateInterval.unref and @_rotateInterval.unref()
     process.nextTick =>
       if opts.bootstrap == false
@@ -150,7 +109,7 @@ class DHT extends EventEmitter
         @_bootstrap utils.fromArray(opts.bootstrap)
       else
         # opts.bootstrap is undefined or true
-        @_bootstrap BOOTSTRAP_NODES
+        @_bootstrap constants.BOOTSTRAP_NODES
     @on 'ready', ->
       @_debug 'emit ready'
 
@@ -309,7 +268,7 @@ DHT::_bootstrap = (nodes) ->
       if @nodes.count() == 0
         @_debug 'No DHT bootstrap nodes replied, retry'
         lookup()
-    ), BOOTSTRAP_TIMEOUT)
+    ), constants.BOOTSTRAP_TIMEOUT)
     @_bootstrapTimeout.unref and @_bootstrapTimeout.unref()
 
 ###*
@@ -365,7 +324,7 @@ DHT::lookup = (id, opts, cb) ->
     @_sendFindNode addr, id, onResponse.bind(null, addr)
 
   queryClosest = =>
-    @nodes.closest({ id: id }, K).forEach (contact) ->
+    @nodes.closest({ id: id }, constants.K).forEach (contact) ->
       query contact.addr
 
   # Note: `_sendFindNode` and `_sendGetPeers` will insert newly discovered nodes into
@@ -393,16 +352,16 @@ DHT::lookup = (id, opts, cb) ->
         res.nodes.forEach (contact) ->
           add contact
     # find closest unqueried nodes
-    candidates = table.closest({ id: id }, K).filter((contact) ->
+    candidates = table.closest({ id: id }, constants.K).filter((contact) ->
       !queried[contact.addr]
     )
-    while pending < MAX_CONCURRENCY and candidates.length
+    while pending < constants.MAX_CONCURRENCY and candidates.length
       # query as many candidates as our concurrency limit will allow
       query candidates.pop().addr
     if pending == 0 and candidates.length == 0
       # recursive lookup should terminate because there are no closer nodes to find
       @_debug 'terminating lookup %s %s', (if opts.findNode then '(find_node)' else '(get_peers)'), idHex
-      closest = (if opts.findNode then table else tokenful).closest({ id: id }, K)
+      closest = (if opts.findNode then table else tokenful).closest({ id: id }, constants.K)
       @_debug 'K closest nodes are:'
       closest.forEach (contact) =>
         @_debug '  ' + contact.addr + ' ' + utils.idToHexString(contact.id)
@@ -427,14 +386,14 @@ DHT::lookup = (id, opts, cb) ->
   @_debug 'lookup %s %s', '(find_node)' , idHex
   table = new KBucket(
     localNodeId: id
-    numberOfNodesPerKBucket: K
-    numberOfNodesToPing: MAX_CONCURRENCY)
+    numberOfNodesPerKBucket: constants.K
+    numberOfNodesToPing: constants.MAX_CONCURRENCY)
   # NOT the same table as the one used for the lookup, as that table may have nodes without tokens
   if !@tables[idHex]
     @tables[idHex] = new KBucket(
       localNodeId: id
-      numberOfNodesPerKBucket: K
-      numberOfNodesToPing: MAX_CONCURRENCY)
+      numberOfNodesPerKBucket: constants.K
+      numberOfNodesToPing: constants.MAX_CONCURRENCY)
   tokenful = @tables[idHex]
   queried = {}
   pending = 0
@@ -465,7 +424,7 @@ DHT::_onData = (data, rinfo) ->
     @_debug errMessage
     @emit 'warning', new Error(errMessage)
   type = message.y and message.y.toString()
-  if type != MESSAGE_TYPE.QUERY and type != MESSAGE_TYPE.RESPONSE and type != MESSAGE_TYPE.ERROR
+  if type != constants.MESSAGE_TYPE.QUERY and type != constants.MESSAGE_TYPE.RESPONSE and type != constants.MESSAGE_TYPE.ERROR
     errMessage = 'unknown message type ' + type + ' from ' + addr
     @_debug errMessage
     @emit 'warning', new Error(errMessage)
@@ -477,11 +436,11 @@ DHT::_onData = (data, rinfo) ->
     # TODO: verify that this a valid length for a nodeId
     # @_debug('adding (potentially) new node %s %s', utils.idToHexString(nodeId), addr)
     @addNode addr, nodeId, addr
-  if type == MESSAGE_TYPE.QUERY
+  if type == constants.MESSAGE_TYPE.QUERY
     try
       result =
         t: message.t
-        y: MESSAGE_TYPE.RESPONSE
+        y: constants.MESSAGE_TYPE.RESPONSE
         r: @_onQuery(addr, message)
     catch e
       console.error(e)
@@ -490,7 +449,7 @@ DHT::_onData = (data, rinfo) ->
     if result
       @_send addr, result
 
-  else if type == MESSAGE_TYPE.RESPONSE or type == MESSAGE_TYPE.ERROR
+  else if type == constants.MESSAGE_TYPE.RESPONSE or type == constants.MESSAGE_TYPE.ERROR
     @_onResponseOrError addr, type, message
 
 ###*
@@ -519,7 +478,7 @@ DHT::_onResponseOrError = (addr, type, message) ->
   transactionId = Buffer.isBuffer(message.t) and message.t.length == 2 and message.t.readUInt16BE(0)
   transaction = @transactions and @transactions[addr] and @transactions[addr][transactionId]
   err = null
-  if type == MESSAGE_TYPE.ERROR
+  if type == constants.MESSAGE_TYPE.ERROR
     err = new Error(if Array.isArray(message.e) then message.e.join(' ') else undefined)
   if !transaction or !transaction.cb
     # unexpected message!
@@ -563,7 +522,7 @@ DHT::_query = (data, addr, cb) ->
   transactionId = @_getTransactionId(addr, cb)
   message =
     t: utils.transactionIdToBuffer(transactionId)
-    y: MESSAGE_TYPE.QUERY
+    y: constants.MESSAGE_TYPE.QUERY
     q: data.q
     a: data.a
   if data.q == 'find_node'
@@ -616,7 +575,7 @@ DHT::_sendError = (addr, transactionId, code, errMessage) ->
   if transactionId and !Buffer.isBuffer(transactionId)
     transactionId = utils.transactionIdToBuffer(transactionId)
   message =
-    y: MESSAGE_TYPE.ERROR
+    y: constants.MESSAGE_TYPE.ERROR
     e: [
       code
       errMessage
@@ -652,7 +611,7 @@ DHT::_getTransactionId = (addr, fn) ->
   reqs.nextTransactionId += 1
   reqs[transactionId] =
     cb: onResponse
-    timeout: setTimeout(onTimeout, SEND_TIMEOUT)
+    timeout: setTimeout(onTimeout, constants.SEND_TIMEOUT)
   transactionId
 
 ###*
@@ -666,7 +625,7 @@ DHT::_rotateSecrets = ->
   # @secrets[1] is the last secret, which is still accepted
 
   createSecret = ->
-    new Buffer(hat(SECRET_ENTROPY), 'hex')
+    new Buffer(hat(constants.SECRET_ENTROPY), 'hex')
 
   if !@secrets
     @secrets = [
@@ -694,7 +653,7 @@ DHT::toArray = ->
   nodes
 
 DHT::_addrIsSelf = (addr) ->
-  @_port and LOCAL_HOSTS[@ipv].some((host) ->
+  @_port and constants.LOCAL_HOSTS[@ipv].some((host) ->
     host + ':' + @_port == addr
   )
 

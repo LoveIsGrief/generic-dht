@@ -1,0 +1,11 @@
+--name       "Generic DHT"
+--readme     README.md
+--title      "Codo Documentation"
+--private
+--quiet
+--extension  coffee
+--output     ./doc
+./src
+-
+LICENSE
+CHANGELOG.md
