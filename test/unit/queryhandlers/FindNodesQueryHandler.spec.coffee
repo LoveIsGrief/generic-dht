@@ -8,8 +8,10 @@ KBucket = require('k-bucket')
 K = 20
 MAX_CONCURRENCY = 1
 
-test 'FindNodeQueryHandler', (t)->
-  t.test "'responds to 'find_node' message'", (t)->
+describe 'FindNodeQueryHandler', ()->
+
+  it "should respond to 'find_node' message", ()->
+
     message = {
       q: 'find_node'
       a: {
@@ -19,10 +21,10 @@ test 'FindNodeQueryHandler', (t)->
     }
     queryHandler = new FindNodeQueryHandler
     func = queryHandler.checkMessage.bind queryHandler, message
-    t.doesNotThrow func, /Cannot handle/, "responds to 'find_node'"
-    t.end()
+    expect(func).not.toThrowError /Cannot handle/
 
-  t.test 'handles good message', (t)->
+  it 'should handle good message', ()->
+
     message = {
       q: 'find_node'
       a: {
@@ -36,10 +38,9 @@ test 'FindNodeQueryHandler', (t)->
       numberOfNodesToPing: MAX_CONCURRENCY
     nodeId = 'some node id'
     queryHandler = new FindNodeQueryHandler nodeId, nodes
-    func = queryHandler.handle.bind queryHandler, message
     expected = {
       id: nodeId
-      nodes: []
+      nodes: new Buffer('')
     }
-    t.doesNotThrow func, expected, "executed 'find_node'"
-    t.end()
+    result = queryHandler.handle message
+    expect(result).toEqual expected

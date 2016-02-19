@@ -63,7 +63,7 @@
   "scripts": {
     "doc": "./node_modules/.bin/grunt codo",
     "test": "find test/unit test/integration -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
-    "test-unit": "find test/unit -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
+    "test-unit": "./node_modules/.bin/grunt jasmine_nodejs:unit",
     "test-integration": "find test/integration -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
     "test-live": "find test/live -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
     "prepublish": "./node_modules/.bin/grunt prepublish"
