@@ -1,80 +1,86 @@
 common = require('../../common')
 BaseQueryHandler = require('../../../src/queryhandlers/BaseQueryHandler')
-test = common.test
 
-test 'BaseQueryHandler', (t)->
+describe 'BaseQueryHandler', ()->
+
   bqh = new BaseQueryHandler()
-  t.test 'checkMessage', (t)->
+
+
+  describe 'the checkMessage method', ()->
+
     goodMessage = {
       a: {}
       q: '__REPLACE_THIS__'
     }
 
-    t.test 'bad message', (t)->
+    it 'should fail with bad messages', ()->
       message = undefined
       func = bqh.checkMessage.bind bqh, message
-      t.throws func, /No message/, 'Undefined message'
+      expect(func).toThrowError TypeError, /No message/
 
       message = null
       func = bqh.checkMessage.bind bqh, message
-      t.throws func, /No message/, 'Null message'
-
-      t.end()
+      expect(func).toThrowError TypeError, /No message/
 
 
-    t.test 'check a', (t)->
-      t.test 'no a', (t)->
+    describe 'arguments in message.a', ()->
+
+      it 'should fail with an empty a', ()->
+
         message = {}
         func = bqh.checkMessage.bind bqh, message
 
-        t.throws func, /Arguments \('a'\)/, 'No arguments in message dict'
-        t.end()
+        expect(func).toThrowError /Arguments \('a'\)/
 
-      t.test 'bad a', (t)->
+      it 'should fail with a bad a', ()->
+
         message = {
           a: 'bad a'
         }
         func = bqh.checkMessage.bind bqh, message
 
-        t.throws func, /not an object/, 'Arguments are not a dict'
-        t.end()
-      t.test 'good a', (t)->
+        expect(func).toThrowError /not an object/
+
+      it 'should succeed with a good a', ()->
+
         func = bqh.checkMessage.bind bqh, goodMessage
-        t.doesNotThrow func, /not an object/, 'Arguments are not a dict'
-        t.end()
+        expect(func).not.toThrowError /not an object/
 
 
-    t.test 'check q', (t)->
-      t.test 'no q', (t)->
+    describe 'query in message.q', ()->
+
+      it 'should fail with no q', ()->
+
         message = {
           a: {}
         }
         func = bqh.checkMessage.bind bqh, message
 
-        t.throws func, /Query name \('q'\)/, 'No query name in message dict'
-        t.end()
+        expect(func).toThrowError /Query name \('q'\)/
 
-      t.test 'bad q', ->
+      it 'should fail with a bad q', ()->
+
         message = {
           a: {}
           q: 'nothing'
         }
         func = bqh.checkMessage.bind bqh, message
 
-        t.throws func, /Cannot handle queries/, 'No query name in message dict'
-        t.end()
+        expect(func).toThrowError /Cannot handle queries/
 
-      t.test 'good q', (t)->
+      it 'should succeed with a good q', ()->
+
         message = {
           a: {}
           q: '__REPLACE_THIS__'
         }
         func = bqh.checkMessage.bind bqh, message
 
-        t.doesNotThrow func, /Cannot handle queries/,
-          'No query name in message dict'
-        t.end()
-  t.test 'getArgs', (t)->
+        expect(func).not.toThrowError /Cannot handle queries/
+
+
+  describe 'the getArgs method', ()->
+
     class ExtendedQueryHandler extends BaseQueryHandler
       @VALUES = [
         'one'
@@ -83,37 +89,40 @@ test 'BaseQueryHandler', (t)->
       ]
       @NAME = 'extend'
 
+
     eqh = new ExtendedQueryHandler()
-    t.test 'good args', (t)->
+
+
+    it 'should succeed with args', ()->
       argsDict = {
         one: 1
         two: 2
         three: 3
       }
       expected = [1, 2, 3]
-      func = eqh.getArgs.bind eqh, argsDict
-      t.doesNotThrow func, expected, 'Right number of args with right names'
-      t.end()
-    t.test 'good but not enough args', (t)->
+      result = eqh.getArgs argsDict
+      expect(result).toEqual expected
+
+    it 'it should fail with good but insufficient args', ()->
       argsDict = {
         one: 1
         two: 2
       }
       func = eqh.getArgs.bind eqh, argsDict
-      t.throws func,
-        /'three' expected to be in arguments/,
-        "'three' arg is missing"
-      t.end()
-    t.test 'good but not enough args', (t)->
+      expect(func).toThrowError /'three' expected to be in arguments/
+
+    it 'good but not enough args', ()->
       argsDict = {
         'not good': 'herp'
       }
       func = eqh.getArgs.bind eqh, argsDict
-      t.throws func, /'one' expected to be in arguments/,
-        'not even one good argument'
-      t.end()
-  t.test 'handle', (t)->
-    t.test 'not implemented', (t)->
+      expect(func).toThrowError /'one' expected to be in arguments/
+
+
+  describe 'the handle method', ()->
+
+    it 'should not be implemented', ()->
+
       goodMessage = {
         a:
           one: 1
@@ -122,11 +131,11 @@ test 'BaseQueryHandler', (t)->
         q: '__REPLACE_THIS__'
       }
       func = bqh.handle.bind bqh, goodMessage
-      t.throws func, /not implemented/, 'To be subclassed'
-      t.end()
+      expect(func).toThrowError /not implemented/
 
 
-    t.test 'subclassed', (t)->
+    describe 'when subclassed', ()->
+
       class TestQueryHandler extends BaseQueryHandler
         @VALUES = [
           'one'
@@ -136,7 +145,7 @@ test 'BaseQueryHandler', (t)->
         @NAME = 'test'
 
         main: (one, two, three)->
-          return arguments
+          [one, two, three]
       tqh = new TestQueryHandler()
 
 
@@ -147,8 +156,8 @@ test 'BaseQueryHandler', (t)->
           three: 3
         q: 'test'
       }
-      t.test 'good message', (t)->
-        func = tqh.handle.bind tqh, goodMessage
+      it 'should work with a good message', ()->
+
         expected = [1, 2, 3]
-        t.doesNotThrow func, expected, 'call with correct values'
-        t.end()
+        result = tqh.handle goodMessage
+        expect(result).toEqual expected

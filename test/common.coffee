@@ -1,12 +1,7 @@
 crypto = require('crypto')
+deepEqual = require('deep-equal')
 hat = require('hat')
 ip = require('ip')
-
-test = require('tape')
-tapSpec = require('tap-spec')
-
-test.createStream().pipe(tapSpec()).pipe(process.stdout)
-exports.test = test
 
 exports.failOnWarningOrError = (t, dht) ->
   dht.on 'warning', (err) ->
@@ -27,3 +22,15 @@ exports.addRandomNodes = (dht, num) ->
   while i < num
     dht.addNode exports.randomAddr(), exports.randomId()
     i++
+
+exports.jasmineMatchers = {
+  toDeepEqual: (util, customEqualityTesters)->
+    compare: (actual, expected)->
+      result = pass: deepEqual(actual, expected)
+      if result.pass
+        result.message = "actual #{actual} deep-equals #{expected}"
+      else
+        result.message = "actual #{actual} are not deep-equal #{expected}"
+
+      result
+}

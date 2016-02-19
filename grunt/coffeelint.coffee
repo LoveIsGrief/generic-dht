@@ -25,4 +25,10 @@ module.exports = {
     '**/*.coffee'
     '!node_modules/**/*.coffee'
   ]
+  sourcesAndTests: [
+    'src/*.coffee'
+    'src/**/*.coffee'
+    'test/*.coffee'
+    'test/**/*.coffee'
+  ]
 }
