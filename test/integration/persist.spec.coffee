@@ -1,7 +1,7 @@
 common = require('./../common')
 DHT = require('../../')
 
-describe 'Persitence tests', ->
+describe 'Persistence tests', ->
 
   beforeEach ->
     jasmine.addMatchers(common.jasmineMatchers)
