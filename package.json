@@ -35,6 +35,7 @@
     "coffee-script": "^1.9.1",
     "grunt": "^0.4.5",
     "grunt-cli": "^0.1.13",
+    "grunt-codo": "^0.2.0",
     "grunt-contrib-coffee": "^1.0.0",
     "ip": "^0.3.0",
     "load-grunt-config": "^0.19.1",
@@ -58,7 +59,7 @@
     "url": "https://github.com/LoveIsGrief/generic-dht.git"
   },
   "scripts": {
-    "doc": "node_modules/.bin/codo",
+    "doc": "./node_modules/.bin/grunt codo",
     "test": "find test/unit test/integration -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
     "test-unit": "find test/unit -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
     "test-integration": "find test/integration -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
