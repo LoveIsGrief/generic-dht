@@ -1,11 +1,10 @@
 common = require('./../common')
 DHT = require('../../')
 
-describe "Basic DHT tests", ()->
+describe 'Basic DHT tests', ()->
 
   beforeEach ()->
     jasmine.addMatchers common.jasmineMatchers
-
 
   it 'should explicitly set nodeId', (done)->
 
