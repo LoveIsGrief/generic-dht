@@ -1,6 +1,5 @@
 common = require('../../common')
 PingQueryHandler = require('../../../src/queryhandlers/PingQueryHandler')
-test = common.test
 
 
 describe 'PingQueryHandler', ()->

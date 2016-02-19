@@ -2,7 +2,6 @@ common = require('../../common')
 FindNodeQueryHandler = require(
   '../../../src/queryhandlers/FindNodeQueryHandler'
 )
-test = common.test
 KBucket = require('k-bucket')
 
 K = 20
