@@ -28,7 +28,7 @@ module.exports = {
   sourcesAndTests: [
     'src/*.coffee'
     'src/**/*.coffee'
-    'test/unit/*.coffee'
-    'test/unit/**/*.coffee'
+    'test/*.coffee'
+    'test/**/*.coffee'
   ]
 }
