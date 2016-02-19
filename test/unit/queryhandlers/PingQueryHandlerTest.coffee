@@ -3,12 +3,12 @@ PingQueryHandler = require('../../../src/queryhandlers/PingQueryHandler')
 test = common.test
 
 
-test "PingQueryHandler", (t)->
+test 'PingQueryHandler', (t)->
   t.test "responds to 'ping' message", (t)->
     message = {
-      q: "ping"
+      q: 'ping'
       a: {
-        "id": "source id"
+        id: 'source id'
       }
     }
     queryHandler = new PingQueryHandler
@@ -16,14 +16,14 @@ test "PingQueryHandler", (t)->
     t.doesNotThrow func, /Cannot handle/, "responds to 'ping'"
     t.end()
 
-  t.test "handles good message", (t)->
+  t.test 'handles good message', (t)->
     message = {
-      q: "ping"
+      q: 'ping'
       a: {
-        "id": "source id"
+        id: 'source id'
       }
     }
-    nodeId = "some node id"
+    nodeId = 'some node id'
     queryHandler = new PingQueryHandler nodeId
     func = queryHandler.handle.bind queryHandler, message
     expected = {
@@ -31,4 +31,3 @@ test "PingQueryHandler", (t)->
     }
     t.doesNotThrow func, expected, "executed 'ping'"
     t.end()
-

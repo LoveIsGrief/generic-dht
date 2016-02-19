@@ -27,4 +27,3 @@ exports.addRandomNodes = (dht, num) ->
   while i < num
     dht.addNode exports.randomAddr(), exports.randomId()
     i++
-

@@ -34,17 +34,19 @@ test '`find_node` query for exact match (with one in table)', (t) ->
   common.failOnWarningOrError t, dht2
   dht1.addNode '255.255.255.255:6969', targetNodeId
   dht1.listen ->
-    dht2._sendFindNode '127.0.0.1:' + dht1.address().port, targetNodeId, (err, res) ->
-      t.error err
-      t.deepEqual res.id, dht1.nodeId, "same nodeid"
-      t.deepEqual res.nodes.map((node) ->
-        node.addr
-      ), [
-        '255.255.255.255:6969'
-        '127.0.0.1:' + dht2.address().port
-      ], "same nodes"
-      dht1.destroy()
-      dht2.destroy()
+    dht2._sendFindNode '127.0.0.1:' + dht1.address().port,
+      targetNodeId,
+      (err, res) ->
+        t.error err
+        t.deepEqual res.id, dht1.nodeId, 'same nodeid'
+        t.deepEqual res.nodes.map((node) ->
+          node.addr
+        ), [
+          '255.255.255.255:6969'
+          '127.0.0.1:' + dht2.address().port
+        ], 'same nodes'
+        dht1.destroy()
+        dht2.destroy()
 
 test '`find_node` query (with many in table)', (t) ->
   t.plan 3
@@ -57,16 +59,18 @@ test '`find_node` query (with many in table)', (t) ->
   dht1.addNode '255.255.255.255:6969', common.randomId()
   dht1.listen ->
     targetNodeId = common.randomId()
-    dht2._sendFindNode '127.0.0.1:' + dht1.address().port, targetNodeId, (err, res) ->
-      t.error err
-      t.deepEqual res.id, dht1.nodeId
-      t.deepEqual res.nodes.map((node) ->
-        node.addr
-      ).sort(), [
-        '1.1.1.1:6969'
-        '10.10.10.10:6969'
-        '127.0.0.1:' + dht2.address().port
-        '255.255.255.255:6969'
-      ]
-      dht1.destroy()
-      dht2.destroy()
+    dht2._sendFindNode '127.0.0.1:' + dht1.address().port,
+      targetNodeId,
+      (err, res) ->
+        t.error err
+        t.deepEqual res.id, dht1.nodeId
+        t.deepEqual res.nodes.map((node) ->
+          node.addr
+        ).sort(), [
+          '1.1.1.1:6969'
+          '10.10.10.10:6969'
+          '127.0.0.1:' + dht2.address().port
+          '255.255.255.255:6969'
+        ]
+        dht1.destroy()
+        dht2.destroy()

@@ -3,4 +3,5 @@ class NotImplementedError extends Error
     super
     @message = "#{funcName} not implemented in #{o.constructor.name}"
 
+
 module.exports = NotImplementedError

@@ -5,13 +5,13 @@ module.exports = {
     files: [
       {
         expand: true
-        cwd: "src/"
+        cwd: 'src/'
         src: [
-          "*.coffee"
-          "**/*.coffee"
+          '*.coffee'
+          '**/*.coffee'
         ]
-        dest: "src/"
-        ext: ".js"
+        dest: 'src/'
+        ext: '.js'
       }
     ]
 }

@@ -3,10 +3,11 @@ crypto = require('crypto')
 string2compact = require('string2compact')
 
 
-###*
-# Convert "contacts" from the routing table into "compact node info" representation.
-# @param  {Array.<Object>} contacts
-# @return {Buffer}
+###
+Convert "contacts" from the routing table
+  into "compact node info" representation.
+@param  {Array.<Object>} contacts
+@return {Buffer}
 ###
 convertToNodeInfo = (contacts) ->
   Buffer.concat contacts.map((contact) ->
@@ -16,10 +17,10 @@ convertToNodeInfo = (contacts) ->
     ]
   )
 
-###*
-# Ensure info hash or node id is a Buffer.
-# @param  {string|Buffer} id
-# @return {Buffer}
+###
+Ensure info hash or node id is a Buffer.
+@param  {string|Buffer} id
+@return {Buffer}
 ###
 idToBuffer = (id) ->
   if Buffer.isBuffer(id)
@@ -27,10 +28,10 @@ idToBuffer = (id) ->
   else
     new Buffer(id, 'hex')
 
-###*
-# Ensure info hash or node id is a hex string.
-# @param  {string|Buffer} id
-# @return {Buffer}
+###
+Ensure info hash or node id is a hex string.
+@param  {string|Buffer} id
+@return {Buffer}
 ###
 idToHexString = (id) ->
   if Buffer.isBuffer(id)
@@ -38,10 +39,10 @@ idToHexString = (id) ->
   else
     id
 
-###*
-# Parse saved string
-# @param  {Array.<Object>} nodes
-# @return {Buffer}
+###
+Parse saved string
+@param  {Array.<Object>} nodes
+@return {Buffer}
 ###
 fromArray = (nodes) ->
   nodes.forEach (node) ->
@@ -49,10 +50,10 @@ fromArray = (nodes) ->
       node.id = idToBuffer(node.id)
   nodes
 
-###*
-# Parse "compact node info" representation into "contacts".
-# @param  {Buffer} nodeInfo
-# @return {Array.<string>}  array of
+###
+Parse "compact node info" representation into "contacts".
+@param  {Buffer} nodeInfo
+@return {Array.<string>}  array of
 ###
 parseNodeInfo = (nodeInfo) ->
   contacts = []
@@ -72,11 +73,11 @@ sha1 = (buf) ->
   crypto.createHash('sha1').update(buf).digest()
 
 
-###*
-# Ensure a transacation id is a 16-bit buffer, so it can be sent on the wire as
+###
+Ensure a transacation id is a 16-bit buffer, so it can be sent on the wire as
 # the transaction id ("t" field).
-# @param  {number|Buffer} transactionId
-# @return {Buffer}
+@param  {number|Buffer} transactionId
+@return {Buffer}
 ###
 transactionIdToBuffer = (transactionId) ->
   if Buffer.isBuffer(transactionId)
