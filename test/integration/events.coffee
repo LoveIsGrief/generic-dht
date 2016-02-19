@@ -62,12 +62,15 @@ test '`ready` event fires when there are K nodes', (t) ->
       port = dht1.address().port
       t.pass 'dht1 listening on port ' + port
 
-      # dht2 will get all 3 nodes from dht1 and should also emit a `ready` event
+      # dht2 will get all 3 nodes from dht1
+      # and should also emit a `ready` event
       dht2 = new DHT(bootstrap: '127.0.0.1:' + port)
       common.failOnWarningOrError t, dht2
 
       dht2.on 'ready', ->
-        # 5 nodes because dht1 also optimistically captured dht2's addr and included it
-        t.equal dht1.nodes.count(), 4, 'dht2 gets 5 nodes from dht1 and fires `ready`'
+        # 5 nodes because dht1 also optimistically captured dht2's addr
+        # and included it
+        t.equal dht1.nodes.count(), 4,
+          'dht2 gets 5 nodes from dht1 and fires `ready`'
         dht1.destroy()
         dht2.destroy()

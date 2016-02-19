@@ -14,13 +14,14 @@ parallel = require('run-parallel')
 string2compact = require('string2compact')
 utils = require './utils'
 constants = require './constants'
-BaseQueryHandler = require "./queryhandlers/BaseQueryHandler"
-FindNodeQueryHandler = require "./queryhandlers/FindNodeQueryHandler"
-PingQueryHandler = require "./queryhandlers/PingQueryHandler"
+BaseQueryHandler = require './queryhandlers/BaseQueryHandler'
+FindNodeQueryHandler = require './queryhandlers/FindNodeQueryHandler'
+PingQueryHandler = require './queryhandlers/PingQueryHandler'
 
 ###
-A DHT client implementation. The DHT is the main peer discovery layer for BitTorrent,
-which allows for trackerless torrents.
+A DHT client implementation.
+  The DHT is the main peer discovery layer for BitTorrent,
+  which allows for trackerless torrents.
 ###
 class DHT extends EventEmitter
 
@@ -33,7 +34,7 @@ class DHT extends EventEmitter
   Make a new node
   @param {string|Buffer} opts
   ###
-  constructor: (opts={}) ->
+  constructor: (opts = {}) ->
     if !(@ instanceof DHT)
       return new DHT(opts)
     EventEmitter.call @
@@ -48,7 +49,7 @@ class DHT extends EventEmitter
     @_destroyed = false
     @_port = null
 
-    ###*
+    ###
     # Routing table
     # @type {KBucket}
     ###
@@ -58,34 +59,35 @@ class DHT extends EventEmitter
       numberOfNodesPerKBucket: constants.K
       numberOfNodesToPing: constants.MAX_CONCURRENCY
 
-    ###*
-    # Query Handlers table
-    # @type {Object} string -> function
+    ###
+    Query Handlers table
+    @type {Object} string -> function
     ###
 
     @queryHandler =
       ping: new PingQueryHandler(@nodeId)
       find_node: new FindNodeQueryHandler(@nodeId, @nodes)
 
-    ###*
-    # Cache of routing tables used during a lookup. Saved in this object so we can access
-    # each node's unique token for announces later.
-    # TODO: Clean up tables after 5 minutes.
-    # @type {Object} infoHash:string -> KBucket
+    ###
+    Cache of routing tables used during a lookup.
+    Saved in this object so we can access
+    each node's unique token for announces later.
+    TODO: Clean up tables after 5 minutes.
+    @type {Object} infoHash:string -> KBucket
     ###
 
     @tables = {}
 
-    ###*
+    ###
     # Pending transactions (unresolved requests to peers)
     # @type {Object} addr:string -> array of pending transactions
     ###
 
     @transactions = {}
 
-    ###*
-    # Peer address data (tracker storage)
-    # @type {Object} infoHash:string -> Object {index:Object, list:Array.<Buffer>}
+    ###
+    Peer address data (tracker storage)
+    @type {Object} infoHash:string -> Object {index:Object, list:Array.<Buffer>}
     ###
 
     # Create socket and attach listeners
@@ -93,18 +95,21 @@ class DHT extends EventEmitter
     @socket.on 'message', @_onData.bind(@)
     @socket.on 'listening', @_onListening.bind(@)
     @socket.on 'error', ->
-    # throw away errors
+      # throw away errors
     @_rotateSecrets()
-    @_rotateInterval = setInterval(@_rotateSecrets.bind(@), constants.ROTATE_INTERVAL)
+    @_rotateInterval = setInterval(
+      @_rotateSecrets.bind(@), constants.ROTATE_INTERVAL
+    )
     @_rotateInterval.unref and @_rotateInterval.unref()
     process.nextTick =>
       if opts.bootstrap == false
-        # Emit `ready` right away because the user does not want to bootstrap. Presumably,
-        # the user will call addNode() to populate the routing table manually.
+        # Emit `ready` right away because the user does not want to bootstrap.
+        # Presumably,the user will call addNode()
+        # to populate the routing table manually.
         @ready = true
         @emit 'ready'
       else if typeof opts.bootstrap == 'string'
-        @_bootstrap [ opts.bootstrap ]
+        @_bootstrap [opts.bootstrap]
       else if Array.isArray(opts.bootstrap)
         @_bootstrap utils.fromArray(opts.bootstrap)
       else
@@ -113,7 +118,7 @@ class DHT extends EventEmitter
     @on 'ready', ->
       @_debug 'emit ready'
 
-###*
+###
 # Start listening for UDP messages on given port.
 # @param  {number} port
 # @param  {string} address
@@ -139,7 +144,7 @@ DHT::listen = (port, address, onlistening) ->
   @_debug 'listen %s', port
   @socket.bind port, address
 
-###*
+###
 # Called when DHT is listening for UDP messages.
 ###
 
@@ -154,7 +159,7 @@ DHT::address = ->
   @socket.address()
 
 
-###*
+###
 # Destroy and cleanup the DHT.
 # @param  {function=} cb
 ###
@@ -182,10 +187,10 @@ DHT::destroy = (cb) ->
   try
     @socket.close()
   catch err
-    # ignore error, socket was either already closed / not yet bound
+  # ignore error, socket was either already closed / not yet bound
     cb null
 
-###*
+###
 # Add a DHT node to the routing table.
 # @param {string} addr
 # @param {string|Buffer} nodeId
@@ -196,16 +201,18 @@ DHT::addNode = (addr, nodeId, from) ->
   return if @_destroyed
   nodeId = utils.idToBuffer(nodeId)
   return if @_addrIsSelf(addr)
-    # @_debug('skipping adding %s since that is us!', addr)
+  # @_debug('skipping adding %s since that is us!', addr)
   contact =
     id: nodeId
     addr: addr
   @nodes.add contact
   # TODO: only emit this event for new nodes
   @emit 'node', addr, nodeId, from
-  @_debug 'addNode %s %s discovered from %s', utils.idToHexString(nodeId), addr, from
+  @_debug 'addNode %s %s discovered from %s',
+    utils.idToHexString(nodeId),
+    addr, from
 
-###*
+###
 # Remove a DHT node from the routing table.
 # @param  {string|Buffer} nodeId
 ###
@@ -217,7 +224,7 @@ DHT::removeNode = (nodeId) ->
     @_debug 'removeNode %s %s', contact.nodeId, contact.addr
     @nodes.remove contact
 
-###*
+###
 # Join the DHT network. To join initially, connect to known nodes (either public
 # bootstrap nodes, or known nodes from a previous run of bittorrent-client).
 # @param  {Array.<string|Object>} nodes
@@ -227,12 +234,11 @@ DHT::_bootstrap = (nodes) ->
   @_debug 'bootstrap with %s', JSON.stringify(nodes)
   contacts = nodes.map((obj) ->
     if typeof obj == 'string'
-      { addr: obj }
+      {addr: obj}
     else
       obj
   )
   @_resolveContacts contacts, (err, contacts)=>
-
     lookup = =>
       @lookup @nodeId, {
         findNode: true
@@ -241,8 +247,8 @@ DHT::_bootstrap = (nodes) ->
         if err
           @_debug 'lookup error %s during bootstrap', err.message
         # emit `ready` once the recursive lookup for our own node ID is finished
-        # (successful or not), so that later get_peer lookups will have a good shot at
-        # succeeding.
+        # (successful or not), so that later get_peer lookups
+        # will have a good shot at succeeding.
         if !@ready
           @ready = true
           @emit 'ready'
@@ -251,7 +257,7 @@ DHT::_bootstrap = (nodes) ->
       return @emit('error', err)
     # add all non-bootstrap nodes to routing table
     contacts.filter((contact) ->
-      ! !contact.id
+      !!contact.id
     ).forEach (contact) =>
       @addNode contact.addr, contact.id, contact.from
     # get addresses of bootstrap nodes
@@ -271,15 +277,15 @@ DHT::_bootstrap = (nodes) ->
     ), constants.BOOTSTRAP_TIMEOUT)
     @_bootstrapTimeout.unref and @_bootstrapTimeout.unref()
 
-###*
+###
 # Resolve the DNS for nodes whose hostname is a domain name (often the case for
 # bootstrap nodes).
-# @param  {Array.<Object>} contacts array of contact objects with domain addresses
-# @param  {function} done
+# @param {Array.<Object>} contacts contact objects with domain addresses
+# @param {function} done
 ###
 
 DHT::_resolveContacts = (contacts, done) ->
-  tasks = contacts.map((contact) =>
+  tasks = contacts.map (contact) =>
     (cb) ->
       addrData = addrToIPPort(contact.addr)
       if isIP(addrData[0])
@@ -290,28 +296,28 @@ DHT::_resolveContacts = (contacts, done) ->
             return cb(null, null)
           contact.addr = host + ':' + addrData[1]
           cb null, contact
-  )
+
   parallel tasks, (err, contacts) ->
     if err
       return done(err)
     # filter out hosts that don't resolve
     contacts = contacts.filter((contact) ->
-      ! !contact
+      !!contact
     )
     done null, contacts
 
-###*
-# Perform a recurive node lookup for the given nodeId. If isFindNode is true, then
-# `find_node` will be sent to each peer instead of `get_peers`.
-# @param {Buffer|string} id node id or info hash
-# @param {Object=} opts
-# @param {boolean} opts.findNode
-# @param {Array.<string>} opts.addrs
-# @param {function} cb called with K closest nodes
+###
+Perform a recurive node lookup for the given nodeId.
+If isFindNode is true, then
+`find_node` will be sent to each peer instead of `get_peers`.
+@param {Buffer|string} id node id or info hash
+@param {Object=} opts
+@param {boolean} opts.findNode
+@param {Array.<string>} opts.addrs
+@param {function} cb called with K closest nodes
 ###
 
 DHT::lookup = (id, opts, cb) ->
-
   add = (contact) =>
     return if @_addrIsSelf(contact.addr)
     if contact.token
@@ -324,11 +330,11 @@ DHT::lookup = (id, opts, cb) ->
     @_sendFindNode addr, id, onResponse.bind(null, addr)
 
   queryClosest = =>
-    @nodes.closest({ id: id }, constants.K).forEach (contact) ->
+    @nodes.closest({id: id}, constants.K).forEach (contact) ->
       query contact.addr
 
-  # Note: `_sendFindNode` and `_sendGetPeers` will insert newly discovered nodes into
-  # the routing table, so that's not done here.
+  # Note: `_sendFindNode` and `_sendGetPeers` will insert
+  # newly discovered nodes into the routing table, so that's not done here.
 
   onResponse = (addr, err, res) =>
     if @_destroyed
@@ -343,8 +349,8 @@ DHT::lookup = (id, opts, cb) ->
       @_debug 'got lookup response from %s', nodeIdHex
       # add node that sent this response
       contact = table.get(nodeId) or
-        id: nodeId
-        addr: addr
+      id: nodeId
+      addr: addr
       contact.token = res and res.token
       add contact
       # add nodes to this routing table for this lookup
@@ -352,16 +358,25 @@ DHT::lookup = (id, opts, cb) ->
         res.nodes.forEach (contact) ->
           add contact
     # find closest unqueried nodes
-    candidates = table.closest({ id: id }, constants.K).filter((contact) ->
+    candidates = table.closest({id: id}, constants.K).filter((contact) ->
       !queried[contact.addr]
     )
     while pending < constants.MAX_CONCURRENCY and candidates.length
       # query as many candidates as our concurrency limit will allow
       query candidates.pop().addr
     if pending == 0 and candidates.length == 0
-      # recursive lookup should terminate because there are no closer nodes to find
-      @_debug 'terminating lookup %s %s', (if opts.findNode then '(find_node)' else '(get_peers)'), idHex
-      closest = (if opts.findNode then table else tokenful).closest({ id: id }, constants.K)
+      # recursive lookup should terminate
+      # because there are no closer nodes to find
+      @_debug 'terminating lookup %s %s', (
+        if opts.findNode
+        then '(find_node)'
+        else '(get_peers)'
+      ), idHex
+      closest = (
+        if opts.findNode
+        then table
+        else tokenful
+      ).closest({id: id}, constants.K)
       @_debug 'K closest nodes are:'
       closest.forEach (contact) =>
         @_debug '  ' + contact.addr + ' ' + utils.idToHexString(contact.id)
@@ -383,12 +398,13 @@ DHT::lookup = (id, opts, cb) ->
   if !@listening
     return @listen(@lookup.bind(@, id, opts, cb))
   idHex = utils.idToHexString(id)
-  @_debug 'lookup %s %s', '(find_node)' , idHex
+  @_debug 'lookup %s %s', '(find_node)', idHex
   table = new KBucket(
     localNodeId: id
     numberOfNodesPerKBucket: constants.K
     numberOfNodesToPing: constants.MAX_CONCURRENCY)
-  # NOT the same table as the one used for the lookup, as that table may have nodes without tokens
+  # NOT the same table as the one used for the lookup,
+  # as that table may have nodes without tokens
   if !@tables[idHex]
     @tables[idHex] = new KBucket(
       localNodeId: id
@@ -405,7 +421,7 @@ DHT::lookup = (id, opts, cb) ->
     # kick off lookup with nodes in the main table
     queryClosest()
 
-###*
+###
 # Called when another node sends a UDP message
 # @param {Buffer} data
 # @param {Object} rinfo
@@ -424,17 +440,26 @@ DHT::_onData = (data, rinfo) ->
     @_debug errMessage
     @emit 'warning', new Error(errMessage)
   type = message.y and message.y.toString()
-  if type != constants.MESSAGE_TYPE.QUERY and type != constants.MESSAGE_TYPE.RESPONSE and type != constants.MESSAGE_TYPE.ERROR
+  acceptedQueries = [
+    constants.MESSAGE_TYPE.QUERY
+    constants.MESSAGE_TYPE.RESPONSE
+    constants.MESSAGE_TYPE.ERROR
+  ]
+  if type not in acceptedQueries
     errMessage = 'unknown message type ' + type + ' from ' + addr
     @_debug errMessage
     @emit 'warning', new Error(errMessage)
   # @_debug('got data %s from %s', JSON.stringify(message), addr)
   # Attempt to add every (valid) node that we see to the routing table.
-  # TODO: If they node is already in the table, just update the "last heard from" time
+  # TODO: If they node is already in the table,
+  # TODO: just update the "last heard from" time
   nodeId = message.r and message.r.id or message.a and message.a.id
   if nodeId
     # TODO: verify that this a valid length for a nodeId
-    # @_debug('adding (potentially) new node %s %s', utils.idToHexString(nodeId), addr)
+    # @_debug(
+    # 'adding (potentially) new node %s %s', utils.idToHexString(nodeId)
+    # , addr
+    # )
     @addNode addr, nodeId, addr
   if type == constants.MESSAGE_TYPE.QUERY
     try
@@ -449,10 +474,11 @@ DHT::_onData = (data, rinfo) ->
     if result
       @_send addr, result
 
-  else if type == constants.MESSAGE_TYPE.RESPONSE or type == constants.MESSAGE_TYPE.ERROR
-    @_onResponseOrError addr, type, message
+  else if type == constants.MESSAGE_TYPE.RESPONSE or
+    type == constants.MESSAGE_TYPE.ERROR
+      @_onResponseOrError addr, type, message
 
-###*
+###
 # Called when another node sends a query.
 # @param  {string} addr
 # @param  {Object} message
@@ -462,12 +488,12 @@ DHT::_onQuery = (addr, message) ->
   query = message.q.toString()
   handler = @queryHandler[query]
   if handler instanceof BaseQueryHandler
-    @_debug "handler:", handler.name
+    @_debug "handler: #{handler.name}"
     return handler.handle message
   else
-    throw new TypeError "unexpected query type"
+    throw new TypeError 'unexpected query type'
 
-###*
+###
 # Called when another node sends a response or error.
 # @param  {string} addr
 # @param  {string} type
@@ -475,28 +501,34 @@ DHT::_onQuery = (addr, message) ->
 ###
 
 DHT::_onResponseOrError = (addr, type, message) ->
-  transactionId = Buffer.isBuffer(message.t) and message.t.length == 2 and message.t.readUInt16BE(0)
-  transaction = @transactions and @transactions[addr] and @transactions[addr][transactionId]
+  transactionId = Buffer.isBuffer(message.t) and
+    message.t.length == 2 and
+    message.t.readUInt16BE(0)
+  transaction = @transactions and
+    @transactions[addr] and
+    @transactions[addr][transactionId]
   err = null
   if type == constants.MESSAGE_TYPE.ERROR
-    err = new Error(if Array.isArray(message.e) then message.e.join(' ') else undefined)
+    err = new Error(if Array.isArray(message.e)
+    then message.e.join(' ')
+    else undefined)
   if !transaction or !transaction.cb
     # unexpected message!
     if err
-      errMessage = 'got unexpected error from ' + addr + ' ' + err.message
+      errMessage = "got unexpected error from '#{addr}' #{err.message}"
       @_debug errMessage
       @emit 'warning', new Error(errMessage)
     else
-      @_debug 'got unexpected message from ' + addr + ' ' + JSON.stringify(message)
+      @_debug "got unexpected message from #{addr} #{JSON.stringify(message)}"
       @emit 'warning', new Error(errMessage)
     return
   transaction.cb err, message.r
 
-###*
-# Send a UDP message to the given addr.
-# @param  {string} addr
-# @param  {Object} message
-# @param  {function=} cb  called once message has been sent
+###
+Send a UDP message to the given addr.
+@param  {string} addr
+@param  {Object} message
+@param  {function=} cb  called once message has been sent
 ###
 
 DHT::_send = (addr, message, cb) ->
@@ -529,20 +561,20 @@ DHT::_query = (data, addr, cb) ->
     @_debug 'sent %s %s to %s', data.q, data.a.target.toString('hex'), addr
   @_send addr, message
 
-###*
-# Send "ping" query to given addr.
-# @param {string} addr
-# @param {function} cb called with response
+###
+Send "ping" query to given addr.
+@param {string} addr
+@param {function} cb called with response
 ###
 
 DHT::_sendPing = (addr, cb) ->
-  @_query { q: 'ping' }, addr, cb
+  @_query {q: 'ping'}, addr, cb
 
-###*
-# Send "find_node" query to given addr.
-# @param {string} addr
-# @param {Buffer} nodeId
-# @param {function} cb called with response
+###
+Send "find_node" query to given addr.
+@param {string} addr
+@param {Buffer} nodeId
+@param {function} cb called with response
 ###
 
 DHT::_sendFindNode = (addr, nodeId, cb) ->
@@ -563,12 +595,12 @@ DHT::_sendFindNode = (addr, nodeId, cb) ->
 
   @_query data, addr, onResponse
 
-###*
-# Send an error to given host and port.
-# @param  {string} addr
-# @param  {Buffer|number} transactionId
-# @param  {number} code
-# @param  {string} errMessage
+###
+Send an error to given host and port.
+@param  {string} addr
+@param  {Buffer|number} transactionId
+@param  {number} code
+@param  {string} errMessage
 ###
 
 DHT::_sendError = (addr, transactionId, code, errMessage) ->
@@ -585,14 +617,13 @@ DHT::_sendError = (addr, transactionId, code, errMessage) ->
   @_debug 'sent error %s to %s', JSON.stringify(message), addr
   @_send addr, message
 
-###*
-# Get a transaction id, and (optionally) set a function to be called
-# @param  {string}   addr
-# @param  {function} fn
+###
+Get a transaction id, and (optionally) set a function to be called
+@param  {string}   addr
+@param  {function} fn
 ###
 
 DHT::_getTransactionId = (addr, fn) ->
-
   onTimeout = ->
     reqs[transactionId] = null
     fn new Error('query timed out')
@@ -614,16 +645,15 @@ DHT::_getTransactionId = (addr, fn) ->
     timeout: setTimeout(onTimeout, constants.SEND_TIMEOUT)
   transactionId
 
-###*
-# Rotate secrets. Secrets are rotated every 5 minutes and tokens up to ten minutes
-# old are accepted.
+###
+Rotate secrets. Secrets are rotated every 5 minutes and tokens up to ten minutes
+old are accepted.
 ###
 
 DHT::_rotateSecrets = ->
   # Initialize secrets array
   # @secrets[0] is the current secret, used to generate new tokens
   # @secrets[1] is the last secret, which is still accepted
-
   createSecret = ->
     new Buffer(hat(constants.SECRET_ENTROPY), 'hex')
 
@@ -636,7 +666,7 @@ DHT::_rotateSecrets = ->
   @secrets[1] = @secrets[0]
   @secrets[0] = createSecret()
 
-###*
+###
 # Get a string that can be used to initialize and bootstrap the DHT in the
 # future.
 # @return {Array.<Object>}

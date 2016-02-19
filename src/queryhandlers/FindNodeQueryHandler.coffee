@@ -1,6 +1,6 @@
-BaseQueryHandler = require("./BaseQueryHandler")
-utils = require("../utils")
-constants = require("../constants")
+BaseQueryHandler = require('./BaseQueryHandler')
+utils = require('../utils')
+constants = require('../constants')
 
 ###
 
@@ -12,8 +12,9 @@ A find_node query has two arguments:
   - "id" containing the node ID of the querying node
   - "target" containing the ID of the node sought by the queryer.
 
-When a node receives a find_node query, it should respond with a key
-"nodes" and value of a string containing the compact node info for the target node
+When a node receives a find_node query,
+  it should respond with a key "nodes"
+  and value of a string containing the compact node info for the target node
   or the K (8) closest good nodes in its own routing table.
 
 arguments:  {"id" : "<querying nodes id>", "target" : "<id of target node>"}
@@ -24,10 +25,10 @@ response: {"id" : "<queried nodes id>", "nodes" : "<compact node info>"}
 class FindNodeQueryHandler extends BaseQueryHandler
 
   @VALUES = [
-    "id"
-    "target"
+    'id'
+    'target'
   ]
-  @NAME = "find_node"
+  @NAME = 'find_node'
 
   ###
   @param nodeId {Buffer, String} ID of the node handling the response
@@ -47,5 +48,6 @@ class FindNodeQueryHandler extends BaseQueryHandler
       id: @nodeId
       nodes: nodes
     }
+
 
 module.exports = FindNodeQueryHandler

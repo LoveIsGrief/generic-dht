@@ -22,7 +22,8 @@ test 'Default bootstrap server returns a peer for one torrent', (t) ->
       t.pass 'Found at least one peer that has the file'
       t.equal infoHash, pride
       dht.destroy()
-test 'Default bootstrap server returns a peer for two torrents (simultaneously)', (t) ->
+test 'Default bootstrap server
+returns a peer for two torrents (simultaneously)', (t) ->
   t.plan 3
   dht = new DHT
   dht.on 'ready', ->

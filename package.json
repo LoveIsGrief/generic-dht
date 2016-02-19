@@ -32,7 +32,14 @@
   "devDependencies": {
     "codo": "^2.1.0",
     "coffee-script": "^1.9.1",
+    "grunt": "^0.4.5",
+    "grunt-cli": "^0.1.13",
+    "grunt-codo": "^0.2.0",
+    "grunt-contrib-coffee": "^1.0.0",
+    "grunt-coffeelint": "0.0.15",
     "ip": "^0.3.0",
+    "load-grunt-config": "^0.19.1",
+    "load-grunt-tasks": "^3.4.0",
     "tap-spec": "^4.1.1",
     "tape": "^3.5.0"
   },
@@ -52,11 +59,11 @@
     "url": "https://github.com/LoveIsGrief/generic-dht.git"
   },
   "scripts": {
-    "doc": "node_modules/.bin/codo",
+    "doc": "./node_modules/.bin/grunt codo",
     "test": "find test/unit test/integration -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
     "test-unit": "find test/unit -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
     "test-integration": "find test/integration -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
     "test-live": "find test/live -name '*.coffee' -exec node_modules/.bin/coffee '{}' \\;",
-    "prepublish": "find -name '*.coffee' -exec node_modules/.bin/coffee -bc --no-header '{}' \\;"
+    "prepublish": "./node_modules/.bin/grunt prepublish"
   }
 }
