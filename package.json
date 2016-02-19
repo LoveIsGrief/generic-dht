@@ -37,6 +37,7 @@
     "grunt-codo": "^0.2.0",
     "grunt-coffeelint": "0.0.15",
     "grunt-contrib-coffee": "^1.0.0",
+    "grunt-contrib-watch": "^0.6.1",
     "grunt-jasmine-nodejs": "^1.4.3",
     "ip": "^0.3.0",
     "load-grunt-config": "^0.19.1",
