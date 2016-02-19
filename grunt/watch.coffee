@@ -1,6 +1,6 @@
 module.exports = {
 
-  sourcesAndTests:
+  sourcesAndUnitTests:
     files: [
       'src/*.coffee'
       'src/**/*.coffee'
@@ -10,6 +10,16 @@ module.exports = {
     tasks: [
       'coffeelint:sourcesAndTests'
       'jasmine_nodejs:unit'
+    ]
+
+  integrationTests:
+    files: [
+      'test/integration/*.coffee'
+      'test/integration/**/*.coffee'
+    ]
+    tasks: [
+      'coffeelint:sourcesAndTests'
+      'jasmine_nodejs:integration'
     ]
 
   configs:

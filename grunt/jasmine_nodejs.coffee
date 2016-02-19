@@ -10,4 +10,11 @@ module.exports = {
     helpers: [
       'test/helpers/**'
     ]
+  integration:
+    specs: [
+      'test/integration/**'
+    ]
+    helpers: [
+      'test/helpers/**'
+    ]
 }
