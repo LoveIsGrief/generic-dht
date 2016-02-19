@@ -3,25 +3,29 @@ DHT = require('../../')
 
 describe "Basic DHT tests", ()->
 
+  beforeEach ()->
+    jasmine.addMatchers common.jasmineMatchers
 
-  it 'should explicitly set nodeId',()->
+
+  it 'should explicitly set nodeId', (done)->
 
     nodeId = common.randomId()
     dht = new DHT(
       nodeId: nodeId
       bootstrap: false)
-    common.failOnWarningOrError t, dht
-    expect(dht.nodeId).toEqual nodeId
+    common.failOnWarningOrError done, dht
+    expect(dht.nodeId).toDeepEqual nodeId
+    done()
 
-  it 'should `ping` query send and response', (done) ->
+  it "should 'ping' query send and response", (done) ->
     dht1 = new DHT(bootstrap: false)
     dht2 = new DHT(bootstrap: false)
     common.failOnWarningOrError done, dht1
     common.failOnWarningOrError done, dht2
     dht1.listen ->
       dht2._sendPing '127.0.0.1:' + dht1.address().port, (err, res) ->
-        expect(err).toBeUndefined()
-        expect(res.id).toEqual dht1.nodeId
+        expect(err).toBeNull()
+        expect(res.id).toDeepEqual dht1.nodeId
         dht1.destroy()
         dht2.destroy()
         done()
@@ -37,14 +41,16 @@ describe "Basic DHT tests", ()->
       dht2._sendFindNode '127.0.0.1:' + dht1.address().port,
         targetNodeId,
         (err, res) ->
-          done.error err
-          done.deepEqual res.id, dht1.nodeId, 'same nodeid'
-          done.deepEqual res.nodes.map((node) ->
+          expect(err).toBeNull()
+          expect(res.id).toDeepEqual dht1.nodeId
+          resultingNodes = res.nodes.map((node) ->
             node.addr
-          ), [
+          )
+          expectedNodes = [
             '255.255.255.255:6969'
             '127.0.0.1:' + dht2.address().port
-          ], 'same nodes'
+          ]
+          expect(resultingNodes).toDeepEqual expectedNodes
           dht1.destroy()
           dht2.destroy()
           done()
@@ -62,8 +68,8 @@ describe "Basic DHT tests", ()->
       dht2._sendFindNode '127.0.0.1:' + dht1.address().port,
         targetNodeId,
         (err, res) ->
-          expect(err).toBeUndefined()
-          expect(res.id).toEqual dht1.nodeId
+          expect(err).toBeNull()
+          expect(res.id).toDeepEqual dht1.nodeId
           expectedNodes =  [
             '1.1.1.1:6969'
             '10.10.10.10:6969'
@@ -73,7 +79,7 @@ describe "Basic DHT tests", ()->
           resultingNodes = res.nodes.map((node) ->
             node.addr
           ).sort()
-          expect(resultingNodes).toEqual expectedNodes
+          expect(resultingNodes).toDeepEqual expectedNodes
           dht1.destroy()
           dht2.destroy()
           done()
