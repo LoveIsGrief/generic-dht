@@ -1,6 +1,6 @@
 module.exports = {
 
-  sourcesAndUnitTests:
+  unit:
     files: [
       'src/*.coffee'
       'src/**/*.coffee'
@@ -12,8 +12,10 @@ module.exports = {
       'jasmine_nodejs:unit'
     ]
 
-  integrationTests:
+  integration:
     files: [
+      'src/*.coffee'
+      'src/**/*.coffee'
       'test/integration/*.coffee'
       'test/integration/**/*.coffee'
     ]
