@@ -2,6 +2,7 @@ module.exports = {
   options:
     helperNameSuffix: '.js'
     specNameSuffix: 'spec.coffee'
+    stopOnFailure: true
     useHelpers: true
   unit:
     specs: [
