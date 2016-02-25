@@ -1,3 +1,4 @@
+utils = require '../utils'
 NotImplementedError = require '../errors/NotImplementedError'
 
 
@@ -17,6 +18,7 @@ class BaseQueryHandler
 # No easy way to access class vars in subclasses
     @values = @constructor.VALUES
     @name = @constructor.NAME
+    @_debug = utils.debug @
 
   checkMessage: (message)->
 

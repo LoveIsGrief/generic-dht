@@ -1,7 +1,6 @@
 # allow override for chrome apps (chrome-dgram)
 addrToIPPort = require('addr-to-ip-port')
 bencode = require('bencode')
-debug = require('debug')('bittorrent-dht')
 dgram = require('dgram')
 dns = require('dns')
 EventEmitter = require('events').EventEmitter
@@ -38,10 +37,11 @@ class DHT extends EventEmitter
     if !(@ instanceof DHT)
       return new DHT(opts)
     EventEmitter.call @
-    if !debug.enabled
+    if !utils.debug.enabled
       @setMaxListeners 0
     @nodeId = utils.idToBuffer(opts.nodeId or hat(160))
     @ipv = opts.ipv or 4
+    @_d = utils.debug(@)
     @_debug 'new DHT %s', utils.idToHexString(@nodeId)
     @ready = false
     @listening = false
@@ -690,6 +690,6 @@ DHT::_addrIsSelf = (addr) ->
 DHT::_debug = ->
   args = [].slice.call(arguments)
   args[0] = '[' + utils.idToHexString(@nodeId).substring(0, 7) + '] ' + args[0]
-  debug.apply null, args
+  @_d.apply null, args
 
 module.exports = DHT
