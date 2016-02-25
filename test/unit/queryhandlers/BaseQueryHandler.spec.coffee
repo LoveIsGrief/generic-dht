@@ -5,7 +5,6 @@ describe 'BaseQueryHandler', ()->
   mockedDhtNode = nodeId: 'aNodeId'
   bqh = new BaseQueryHandler(mockedDhtNode)
 
-
   describe 'the checkMessage method', ()->
 
     goodMessage = {
@@ -160,4 +159,52 @@ describe 'BaseQueryHandler', ()->
 
         expected = [1, 2, 3]
         result = tqh.handle goodMessage
+        expect(result).toEqual expected
+
+
+  describe 'the treatArgs method', ()->
+
+    it 'should exist', ()->
+      expect(bqh.treatArgsToSend).toBeDefined()
+
+    describe 'inherited', ()->
+      class TestQueryHandler extends BaseQueryHandler
+        @VALUES = [
+          'id'
+          'testval1'
+          'testval2'
+        ]
+        @NAME = 'test'
+      tqh = new TestQueryHandler {nodeId: 'aTestNode'}
+
+      it 'should throw for not enough args', ()->
+        tooFewArgs = []
+        func = tqh.treatArgsToSend.bind tqh, tooFewArgs...
+        expect(func).toThrowError RangeError, /args needed to send/
+
+        tooFewArgs = ['one is not enough ']
+        func = tqh.treatArgsToSend.bind tqh, tooFewArgs...
+        expect(func).toThrowError RangeError, /args needed to send/
+
+      it 'should throw for too many args', ()->
+        # Remember that 'id' is ignored!!!!
+        tooManyArgs = [
+          'three'
+          'is'
+          'crowd'
+        ]
+        func = tqh.treatArgsToSend.bind tqh, tooManyArgs...
+        expect(func).toThrowError RangeError, /args needed to send/
+
+      it 'work for the right amount of args', ()->
+        # Remember that 'id' is ignored!!!!
+        goodArgs = [
+          'two'
+          'good'
+        ]
+        expected = {
+          testval1: 'two'
+          testval2: 'good'
+        }
+        result = tqh.treatArgsToSend goodArgs...
         expect(result).toEqual expected

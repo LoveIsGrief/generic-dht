@@ -1,3 +1,4 @@
+_ = require 'lodash'
 utils = require '../utils'
 NotImplementedError = require '../errors/NotImplementedError'
 
@@ -18,8 +19,11 @@ class BaseQueryHandler
     # No easy way to access class vars in subclasses
     @values = @constructor.VALUES
     @name = @constructor.NAME
-    @_debug = utils.debug @
     @nodeId = @dhtNode.nodeId
+    @_debug = utils.debug @
+
+    # For sending messages the id value/arg is responsibility of the sender
+    @filteredValues = _.without @values, 'id'
 
   checkMessage: (message)->
 
@@ -63,6 +67,17 @@ class BaseQueryHandler
   ###
   main: ->
     throw new NotImplementedError(@, 'main')
+
+  ###
+  @param args {Arguments}
+  ###
+  treatArgsToSend: (args...)->
+    # The id is added in the sendFunc
+    if args.length != @filteredValues.length
+      throw new RangeError "#{@filteredValues.length} args needed to send
+        #{@name}
+        Got #{args.length} args: '#{args}'"
+    _.zipObject(@filteredValues, args)
 
 
 module.exports = BaseQueryHandler
