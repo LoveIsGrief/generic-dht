@@ -34,7 +34,7 @@ class FindNodeQueryHandler extends BaseQueryHandler
   @param nodeId {Buffer, String} ID of the node handling the response
   @param nodes {KBucket} a DHT node's known nodes
   ###
-  constructor: (@nodeId, @nodes)->
+  constructor: (@dhtNode)->
     super
 
   ###
@@ -43,7 +43,9 @@ class FindNodeQueryHandler extends BaseQueryHandler
   ###
   main: (id, target)->
     # Convert nodes to "compact node info" representation
-    nodes = utils.convertToNodeInfo(@nodes.closest({id: target}, constants.K))
+    nodes = utils.convertToNodeInfo(
+      @dhtNode.nodes.closest({id: target}, constants.K)
+    )
     {
       id: @nodeId
       nodes: nodes

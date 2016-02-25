@@ -18,7 +18,7 @@ describe 'FindNodeQueryHandler', ()->
         target: 'unknown node'
       }
     }
-    queryHandler = new FindNodeQueryHandler
+    queryHandler = new FindNodeQueryHandler {nodeId: 'aDHTNode'}
     func = queryHandler.checkMessage.bind queryHandler, message
     expect(func).not.toThrowError /Cannot handle/
 
@@ -36,7 +36,10 @@ describe 'FindNodeQueryHandler', ()->
       numberOfNodesPerKBucket: K
       numberOfNodesToPing: MAX_CONCURRENCY
     nodeId = 'some node id'
-    queryHandler = new FindNodeQueryHandler nodeId, nodes
+    queryHandler = new FindNodeQueryHandler {
+      nodeId: nodeId
+      nodes: nodes
+    }
     expected = {
       id: nodeId
       nodes: new Buffer('')

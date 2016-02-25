@@ -13,6 +13,8 @@ parallel = require('run-parallel')
 string2compact = require('string2compact')
 utils = require './utils'
 constants = require './constants'
+
+# Queries
 BaseQueryHandler = require './queryhandlers/BaseQueryHandler'
 FindNodeQueryHandler = require './queryhandlers/FindNodeQueryHandler'
 PingQueryHandler = require './queryhandlers/PingQueryHandler'
@@ -61,12 +63,10 @@ class DHT extends EventEmitter
 
     ###
     Query Handlers table
-    @type {Object} string -> function
+    @type {Object} string -> QueryHandler
     ###
-
-    @queryHandler =
-      ping: new PingQueryHandler(@nodeId)
-      find_node: new FindNodeQueryHandler(@nodeId, @nodes)
+    @queryHandlers = {}
+    @initQueryHandlers()
 
     ###
     Cache of routing tables used during a lookup.
@@ -117,6 +117,14 @@ class DHT extends EventEmitter
         @_bootstrap constants.BOOTSTRAP_NODES
     @on 'ready', ->
       @_debug 'emit ready'
+
+DHT::initQueryHandlers = ()->
+  for queryHandlerClass in [
+    PingQueryHandler
+    FindNodeQueryHandler
+  ]
+    if not @queryHandlers[queryHandlerClass.NAME]
+      @queryHandlers[queryHandlerClass.NAME] = new queryHandlerClass(@)
 
 ###
 # Start listening for UDP messages on given port.
@@ -486,7 +494,7 @@ DHT::_onData = (data, rinfo) ->
 
 DHT::_onQuery = (addr, message) ->
   query = message.q.toString()
-  handler = @queryHandler[query]
+  handler = @queryHandlers[query]
   if handler instanceof BaseQueryHandler
     @_debug "handler: #{handler.name}"
     return handler.handle message

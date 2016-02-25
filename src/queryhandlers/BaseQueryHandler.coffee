@@ -14,11 +14,12 @@ class BaseQueryHandler
   ###
   @NAME = '__REPLACE_THIS__'
 
-  constructor: () ->
-# No easy way to access class vars in subclasses
+  constructor: (@dhtNode) ->
+    # No easy way to access class vars in subclasses
     @values = @constructor.VALUES
     @name = @constructor.NAME
     @_debug = utils.debug @
+    @nodeId = @dhtNode.nodeId
 
   checkMessage: (message)->
 

@@ -2,8 +2,8 @@ common = require('../../common')
 BaseQueryHandler = require('../../../src/queryhandlers/BaseQueryHandler')
 
 describe 'BaseQueryHandler', ()->
-
-  bqh = new BaseQueryHandler()
+  mockedDhtNode = nodeId: 'aNodeId'
+  bqh = new BaseQueryHandler(mockedDhtNode)
 
 
   describe 'the checkMessage method', ()->
@@ -90,7 +90,7 @@ describe 'BaseQueryHandler', ()->
       @NAME = 'extend'
 
 
-    eqh = new ExtendedQueryHandler()
+    eqh = new ExtendedQueryHandler(mockedDhtNode)
 
 
     it 'should succeed with args', ()->
@@ -146,7 +146,7 @@ describe 'BaseQueryHandler', ()->
 
         main: (one, two, three)->
           [one, two, three]
-      tqh = new TestQueryHandler()
+      tqh = new TestQueryHandler(mockedDhtNode)
 
 
       goodMessage = {
