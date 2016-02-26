@@ -1,3 +1,4 @@
+_ = require 'lodash'
 Transaction = require './Transaction'
 utils = require '../utils'
 

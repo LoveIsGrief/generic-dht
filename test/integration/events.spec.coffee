@@ -1,5 +1,6 @@
 common = require('./../common')
 DHT = require('../../')
+debug = require 'debug'
 
 describe 'Event tests', ->
 

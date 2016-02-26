@@ -4,9 +4,23 @@ constants = require '../constants'
 ###
 Holds information about a query sent to another node.
 
-Allows us to take action
+@example Response linked to transaction
+  query(args...)
+  .then (response, address)->
+    transaction = # get transaction ...
+    transaction.response response
+  .catch (error, response, address)->
+    transaction = # get transaction ...
+    transaction.error error, response
 
 @event timeout
+@event response - should be emitted externally
+  @param response {Object}
+  @param address {String}
+@event error - should be emitted externally
+  @param erro {String, Error}
+  @param response {Object}
+  @param address {String}
 ###
 class Transaction extends events.EventEmitter
 
@@ -21,30 +35,20 @@ class Transaction extends events.EventEmitter
   constructor: (
     @address,
     @id,
-    @onResponse,
-    @onError,
     timeout = constants.SEND_TIMEOUT
   )->
-
+    @finalized = false
     onTimeout = @_onTimeout.bind @
     @timeoutId = setTimeout onTimeout, timeout
 
-  ###
-  Overwritten in the constructor
+  respond: (response)->
+    @emit 'finalize', @address, @id
+    @emit 'respond', response, @address
 
-  @param response {Object}
-  @param fromAddress {String}
-  ###
-  onResponse: (response, fromAddress)->
+  error: (error, response)->
+    @emit 'finalize', @address, @id
+    @emit 'error', error, response, @address
 
-  ###
-  Overwritten in the constructor
-
-  @param error {String, Error}
-  @param response {Object}
-  @param fromAddress {String}
-  ###
-  onError: (error, response, fromAddress)->
 
   ###
   Cleanup once the transaction has timed out
