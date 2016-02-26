@@ -1,5 +1,6 @@
-common = require('../../common')
-PingQueryHandler = require('../../../src/queryhandlers/PingQueryHandler')
+r = require('require-root')('generic-dht')
+common = r('test/common')
+PingQueryHandler = r('src/queryhandlers/PingQueryHandler')
 
 
 describe 'PingQueryHandler', ()->

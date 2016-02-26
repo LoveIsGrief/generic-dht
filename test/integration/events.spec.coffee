@@ -1,5 +1,6 @@
-common = require('./../common')
-DHT = require('../../')
+r = require('require-root')('generic-dht')
+common = r('test/common')
+DHT = r('./')
 debug = require 'debug'
 
 describe 'Event tests', ->

@@ -1,8 +1,7 @@
-common = require('../../common')
-FindNodeQueryHandler = require(
-  '../../../src/queryhandlers/FindNodeQueryHandler'
-)
 KBucket = require('k-bucket')
+r = require('require-root')('generic-dht')
+common = r('test/common')
+FindNodeQueryHandler = r('/src/queryhandlers/FindNodeQueryHandler')
 
 K = 20
 MAX_CONCURRENCY = 1

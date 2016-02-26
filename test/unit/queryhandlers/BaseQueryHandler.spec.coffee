@@ -1,5 +1,6 @@
-common = require('../../common')
-BaseQueryHandler = require('../../../src/queryhandlers/BaseQueryHandler')
+r = require('require-root')('generic-dht')
+common = r('test/common')
+BaseQueryHandler = r('src/queryhandlers/BaseQueryHandler')
 
 describe 'BaseQueryHandler', ()->
   mockedDhtNode = nodeId: 'aNodeId'

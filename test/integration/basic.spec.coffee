@@ -1,6 +1,7 @@
+r = require('require-root')('generic-dht')
 debug = require 'debug'
-common = require('./../common')
-DHT = require('../../')
+common = r('test/common')
+DHT = r('./')
 
 describe 'Basic DHT tests', ()->
 
