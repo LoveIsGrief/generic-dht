@@ -1,5 +1,6 @@
 events = require 'events'
 constants = require '../constants'
+utils = require '../utils'
 
 ###
 Holds information about a query sent to another node.
@@ -14,13 +15,17 @@ Holds information about a query sent to another node.
     transaction.error error, response
 
 @event timeout
-@event response - should be emitted externally
+
+@event response - notify there's a response for the transaction
   @param response {Object}
-  @param address {String}
-@event error - should be emitted externally
-  @param erro {String, Error}
+
+@event error - notify errors in the transaction
+  @param error {String, Error}
   @param response {Object}
-  @param address {String}
+
+@event finalize - put in a final state where no more actions are possible
+  @param address {String} IP:port
+  @param id {Integer}
 ###
 class Transaction extends events.EventEmitter
 
@@ -28,8 +33,6 @@ class Transaction extends events.EventEmitter
   ###
   @param address {String}
   @param id {Integer}
-  @param onResponse {Function}
-  @param onError {Function}
   @param timeout {Number} How many milliseconds to wait until a timeout
   ###
   constructor: (
@@ -37,26 +40,64 @@ class Transaction extends events.EventEmitter
     @id,
     timeout = constants.SEND_TIMEOUT
   )->
+    @_debug = utils.debug @
     @finalized = false
     onTimeout = @_onTimeout.bind @
     @timeoutId = setTimeout onTimeout, timeout
 
-  respond: (response)->
-    @emit 'finalize', @address, @id
-    @emit 'respond', response, @address
+  toString: ()->
+    "Transaction[#{@timeoutId}] #{@address} - #{@id} | finalized:#{@finalized}"
 
+  ###
+  Put in a state where no more actions can be taken.
+
+  @param prefixFn {Function} Called before finalizing
+  @param message {String} Log in case we are already finalized
+  ###
+  finalize: (prefixFn, message='Already finalized')->
+    if !@finalized
+      clearTimeout @timeoutId
+      prefixFn() if prefixFn
+      @finalized = true
+      @emit 'finalize', @address, @id
+    else
+      @_debug message
+
+  ###
+  Notify of a response
+
+  @param response {Object}
+
+  @event response
+  @event finalize
+  ###
+  respond: (response)->
+    @finalize ()=>
+      @emit 'response', response, @address
+    , 'already received response from', @address, ' id:', @id
+
+  ###
+  Notify of an error
+
+  @param response {Object}
+
+  @event error
+  @event finalize
+  ###
   error: (error, response)->
-    @emit 'finalize', @address, @id
-    @emit 'error', error, response, @address
+    @finalize ()=>
+      @emit 'error', error, response, @address
+    , 'already received response from', @address, ' id:', @id
 
 
   ###
   Cleanup once the transaction has timed out
   @event timeout
+  @event finalize
   ###
   _onTimeout: ()->
-    clearTimeout @timeoutId
-    @emit 'timeout', @
+    @finalize ()=>
+      @emit 'timeout', @address, @id
 
 
 module.exports = Transaction

@@ -550,10 +550,10 @@ DHT::_onResponseOrError = (addr, type, message) ->
       return
 
   if err
-    transaction.onError err, message.r, addr
+    transaction.error err, message.r
   else
     @_debug 'calling response of transaction', transaction
-    transaction.onResponse message.r, addr
+    transaction.respond message.r
 
 ###
 Send a UDP message to the given addr.
@@ -614,7 +614,7 @@ DHT::_onTransactionError = (error, response, messageType)->
     error.message
   else
     errorMessage
-  @emit 'transactionError', errorMessage, response, messageType
+  @emit 'transactionError', errorMessage
 
 ###
 Send an error to given host and port.

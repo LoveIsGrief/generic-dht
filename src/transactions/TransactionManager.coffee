@@ -8,61 +8,63 @@ Keeps track of transactions and allows us to create them as well.
 class TransactionManager
 
   ###
-  @param mainResponseCallback {Function}
+  Remembers 'global' callbacks that will be assigned to each transaction.
+
+  @param mainResponseCallback {Function} callback
+    for @see {Transaction}.response event
+  @param errorResponseCallback {Function} callback
+    for @see {Transaction}.error event
   ###
   constructor: (@mainResponseCallback, @mainErrorCallback)->
     @transactionsPerAddress = {}
     @_debug = utils.debug(@)
 
 
-  _buildOnReponseCallback: (
-    address,
-    transactionId,
-    messageType,
-    transactionCallback
-  )->
+  _buildOnResponseCallback: (messageType)->
     (response, fromAddress)=>
-      @_clearTransaction address, transactionId
       if @mainResponseCallback
         @mainResponseCallback response, messageType, fromAddress
-      if transactionCallback
-        transactionCallback response, fromAddress
 
-  _buildOnErrorCallback: (
-    address,
-    transactionId,
-    messageType,
-    transactionCallback,
-  )->
+  _buildOnErrorCallback: (messageType)->
     (error, response, fromAddress)=>
-      @_clearTransaction address, transactionId
       if @mainErrorCallback
         @mainErrorCallback error, response, messageType, fromAddress
-      if transactionCallback
-        transactionCallback error, response, messageType, fromAddress
 
-  # Cleans the transaction from the known transactions
+
   _onTransactionTimeout: (address, transactionId)->
-    errorMessage = "Transaction timeout for #{address} - #{transactionId}"
-    error = new Error errorMessage
     transaction = @getTransaction address,transactionId
-    transaction.onError error, null, address
-    @_clearTransaction address, transactionId
+    if transaction
+      errorMessage = "Transaction timeout for #{address} - #{transactionId}"
+      error = new Error errorMessage
+      transaction.error error, null
+      @_clearTransaction address, transactionId
 
-
+  ###
+  Cleans the transaction from the known transactions
+  ###
   _clearTransaction: (address, transactionId)->
     transaction = @getTransaction(address, transactionId)
     if transaction
-      clearTimeout transaction.timeoutId
       delete @transactionsPerAddress[address][transactionId]
 
 
   ###
-  Get a transaction id, and (optionally) set a function to be called
-  @param  {string}   addr
-  @param  {function} fn
+  Create a new transaction and get its ID
+
+  The transaction will have 'global' callbacks
+  and also the here given callbacks
+
+  @param address {String} Target
+  @param messageType {String} an identifier for the kind of message being sent
+  @param responseCallback {Function} @see {Transaction}.response event
+  @param errorCallback {Function} @see {Transaction}.error event
   ###
-  getNewTransactionId: (address, messageType, callback, errorCallback)->
+  getNewTransactionId: (
+    address,
+    messageType,
+    responseCallback=_.noop,
+    errorCallback=_.noop
+  )->
     transactions = @transactionsPerAddress[address]
     if !transactions
       transactions = @transactionsPerAddress[address] = {}
@@ -70,33 +72,28 @@ class TransactionManager
     transactionId = transactions.nextTransactionId
     transactions.nextTransactionId += 1
 
-    responseCallback = @_buildOnReponseCallback(
-      address,
-      transactionId,
-      messageType,
-      callback)
-    errorCallback = @_buildOnErrorCallback(
-      address,
-      transactionId,
-      messageType,
-      errorCallback
-    )
-
-    transaction = new Transaction(
-      address, transactionId
-      responseCallback, errorCallback
-    )
-    transaction.on 'timeout',
-      @_onTransactionTimeout.bind(@, address, transactionId)
+    transaction = new Transaction(address, transactionId)
+    transaction.on 'finalize', @_clearTransaction.bind(@)
+    transaction.on 'response', @_buildOnResponseCallback(messageType)
+    transaction.on 'response', responseCallback
+    transaction.on 'error', @_buildOnErrorCallback(messageType)
+    transaction.on 'error', errorCallback
+    transaction.on 'timeout', @_onTransactionTimeout.bind(@)
     transactions[transactionId] = transaction
     transaction.id
 
+  ###
+  Attempts to find the transaction.
+
+  @return {Transmission | null}
+  ###
   getTransaction: (address, id)->
     transactions = @transactionsPerAddress[address]
     if transactions
       transactions[id]
     else
       @_debug "No tranaction for #{address} - #{id} found"
+      null
 
 
 module.exports = TransactionManager
