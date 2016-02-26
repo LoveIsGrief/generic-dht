@@ -79,5 +79,12 @@ class BaseQueryHandler
         Got #{args.length} args: '#{args}'"
     _.zipObject(@filteredValues, args)
 
+  ###
+  Handles a response to a query.
+  @param response {Object}
+  ###
+  onResponse: (response, fromAddress)->
+    @_debug "Received response from #{fromAddress}:", response
+
 
 module.exports = BaseQueryHandler

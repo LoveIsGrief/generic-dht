@@ -51,5 +51,14 @@ class FindNodeQueryHandler extends BaseQueryHandler
       nodes: nodes
     }
 
+  ###
+  @param response {Object}
+  ###
+  onResponse: (response, fromAddress)->
+    if response.nodes
+      response.nodes = utils.parseNodeInfo(response.nodes)
+      for node in response.nodes
+        @dhtNode.addNode node.addr, node.id, fromAddress
+
 
 module.exports = FindNodeQueryHandler

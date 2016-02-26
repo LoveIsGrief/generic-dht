@@ -1,4 +1,5 @@
 # allow override for chrome apps (chrome-dgram)
+_ = require 'lodash'
 addrToIPPort = require('addr-to-ip-port')
 bencode = require('bencode')
 dgram = require('dgram')
@@ -18,6 +19,9 @@ constants = require './constants'
 BaseQueryHandler = require './queryhandlers/BaseQueryHandler'
 FindNodeQueryHandler = require './queryhandlers/FindNodeQueryHandler'
 PingQueryHandler = require './queryhandlers/PingQueryHandler'
+
+# Transactions
+TransactionManager = require './transactions/TransactionManager'
 
 ###
 A DHT client implementation.
@@ -80,10 +84,13 @@ class DHT extends EventEmitter
 
     ###
     # Pending transactions (unresolved requests to peers)
-    # @type {Object} addr:string -> array of pending transactions
+    # @type {TransactionManager} addr:string -> array of pending transactions
     ###
+    @transactionManager = new TransactionManager(
+      @_onTransactionResponse.bind(@),
+      @_onTransactionError.bind(@)
+    )
 
-    @transactions = {}
 
     ###
     Peer address data (tracker storage)
@@ -188,7 +195,6 @@ DHT::destroy = (cb) ->
   # garbage collect large data structures
   @nodes = null
   @tables = null
-  @transactions = null
   clearTimeout @_bootstrapTimeout
   clearInterval @_rotateInterval
   @socket.on 'close', cb
@@ -207,6 +213,9 @@ DHT::destroy = (cb) ->
 
 DHT::addNode = (addr, nodeId, from) ->
   return if @_destroyed
+  if not addr
+    console.warn "don't add non-existent contact"
+    return
   nodeId = utils.idToBuffer(nodeId)
   return if @_addrIsSelf(addr)
   # @_debug('skipping adding %s since that is us!', addr)
@@ -333,45 +342,30 @@ DHT::lookup = (id, opts, cb) ->
     table.add contact
 
   query = (addr) =>
+    if addr.addr
+      addr = addr.addr
     pending += 1
     queried[addr] = true
-    @_sendFindNode addr, id, onResponse.bind(null, addr)
+    @sendQuery addr, onResponse, onError, 'find_node', id
 
   queryClosest = =>
     @nodes.closest({id: id}, constants.K).forEach (contact) ->
       query contact.addr
 
-  # Note: `_sendFindNode` and `_sendGetPeers` will insert
-  # newly discovered nodes into the routing table, so that's not done here.
-
-  onResponse = (addr, err, res) =>
+  commonPrefix = ()=>
     if @_destroyed
       return cb(new Error('dht is destroyed'))
     pending -= 1
-    nodeId = res and res.id
-    nodeIdHex = utils.idToHexString(nodeId)
-    # ignore errors - they are just timeouts
-    if err
-      @_debug 'got lookup error: %s', err.message
-    else
-      @_debug 'got lookup response from %s', nodeIdHex
-      # add node that sent this response
-      contact = table.get(nodeId) or
-      id: nodeId
-      addr: addr
-      contact.token = res and res.token
-      add contact
-      # add nodes to this routing table for this lookup
-      if res and res.nodes
-        res.nodes.forEach (contact) ->
-          add contact
-    # find closest unqueried nodes
-    candidates = table.closest({id: id}, constants.K).filter((contact) ->
+
+  commonPostfix = ()=>
+    candidates = table.closest({id: id}, constants.K).filter((contact) =>
       !queried[contact.addr]
     )
     while pending < constants.MAX_CONCURRENCY and candidates.length
       # query as many candidates as our concurrency limit will allow
       query candidates.pop().addr
+
+    @_debug 'pending', pending, 'candidates.length', candidates.length
     if pending == 0 and candidates.length == 0
       # recursive lookup should terminate
       # because there are no closer nodes to find
@@ -389,6 +383,32 @@ DHT::lookup = (id, opts, cb) ->
       closest.forEach (contact) =>
         @_debug '  ' + contact.addr + ' ' + utils.idToHexString(contact.id)
       cb null, closest
+
+
+  onError = (error, response, messageType, fromAddress)=>
+    commonPrefix()
+    @_debug 'error ', error, ' from', fromAddress
+    commonPostfix()
+
+  onResponse = (res, addr) =>
+    commonPrefix()
+    nodeId = res and res.id
+    nodeIdHex = utils.idToHexString(nodeId)
+    @_debug 'got lookup response from %s', nodeIdHex
+    # add node that sent this response
+    contact = table.get(nodeId) or {
+      id: nodeId
+      addr: addr
+    }
+    contact.token = res and res.token
+    add contact
+    # add nodes to this routing table for this lookup
+    if res and res.nodes
+      res.nodes.forEach (contact) ->
+        add contact
+    # find closest unqueried nodes
+    commonPostfix()
+
 
   id = utils.idToBuffer(id)
   if typeof opts == 'function'
@@ -512,15 +532,13 @@ DHT::_onResponseOrError = (addr, type, message) ->
   transactionId = Buffer.isBuffer(message.t) and
     message.t.length == 2 and
     message.t.readUInt16BE(0)
-  transaction = @transactions and
-    @transactions[addr] and
-    @transactions[addr][transactionId]
+  transaction = @transactionManager.getTransaction addr, transactionId
   err = null
   if type == constants.MESSAGE_TYPE.ERROR
-    err = new Error(if Array.isArray(message.e)
-    then message.e.join(' ')
-    else undefined)
-  if !transaction or !transaction.cb
+    err = new Error(
+      if Array.isArray(message.e) then message.e.join(' ') else undefined
+    )
+  if !transaction
     # unexpected message!
     if err
       errMessage = "got unexpected error from '#{addr}' #{err.message}"
@@ -529,8 +547,13 @@ DHT::_onResponseOrError = (addr, type, message) ->
     else
       @_debug "got unexpected message from #{addr} #{JSON.stringify(message)}"
       @emit 'warning', new Error(errMessage)
-    return
-  transaction.cb err, message.r
+      return
+
+  if err
+    transaction.onError err, message.r, addr
+  else
+    @_debug 'calling response of transaction', transaction
+    transaction.onResponse message.r, addr
 
 ###
 Send a UDP message to the given addr.
@@ -545,7 +568,7 @@ DHT::_send = (addr, message, cb) ->
   if !cb
 
     cb = ->
-
+  @_debug 'sending message', message, ' to ', addr
   addrData = addrToIPPort(addr)
   host = addrData[0]
   port = addrData[1]
@@ -554,54 +577,44 @@ DHT::_send = (addr, message, cb) ->
   message = bencode.encode(message)
   @socket.send message, 0, message.length, port, host, cb
 
-DHT::_query = (data, addr, cb) ->
-  if !data.a
-    data.a = {}
-  if !data.a.id
-    data.a.id = @nodeId
-  transactionId = @_getTransactionId(addr, cb)
+DHT::_query = (addr, queryName, namedArguments, cb, errorCb) ->
+  args = _.merge {}, namedArguments, {id: @nodeId}
+  transactionId = @transactionManager.getNewTransactionId(
+    addr,
+    queryName,
+    cb,
+    errorCb
+  )
   message =
     t: utils.transactionIdToBuffer(transactionId)
     y: constants.MESSAGE_TYPE.QUERY
-    q: data.q
-    a: data.a
-  if data.q == 'find_node'
-    @_debug 'sent %s %s to %s', data.q, data.a.target.toString('hex'), addr
+    q: queryName
+    a: args
   @_send addr, message
 
-###
-Send "ping" query to given addr.
-@param {string} addr
-@param {function} cb called with response
-###
 
-DHT::_sendPing = (addr, cb) ->
-  @_query {q: 'ping'}, addr, cb
+DHT::sendQuery = (address, cb, errorCb, queryName, args...)->
+  handler = @queryHandlers[queryName]
+  if not handler
+    throw new TypeError "Cannot handle query '#{queryName}'"
+  namedArgs = handler.treatArgsToSend args...
+  @_query address, queryName, namedArgs, cb, errorCb
 
-###
-Send "find_node" query to given addr.
-@param {string} addr
-@param {Buffer} nodeId
-@param {function} cb called with response
-###
 
-DHT::_sendFindNode = (addr, nodeId, cb) ->
-  data =
-    q: 'find_node'
-    a:
-      id: @nodeId
-      target: nodeId
+DHT::_onTransactionResponse = (response, messageType)->
+  queryHandler = @queryHandlers[messageType]
+  if queryHandler instanceof BaseQueryHandler
+    queryHandler.onResponse response
+  else
+    console.warn "No response handler for #{messageType}"
 
-  onResponse = (err, res) =>
-    if err
-      return cb(err)
-    if res.nodes
-      res.nodes = utils.parseNodeInfo(res.nodes)
-      res.nodes.forEach (node) =>
-        @addNode node.addr, node.id, addr
-    cb null, res
 
-  @_query data, addr, onResponse
+DHT::_onTransactionError = (error, response, messageType)->
+  errorMessage = if error instanceof Error
+    error.message
+  else
+    errorMessage
+  @emit 'transactionError', errorMessage, response, messageType
 
 ###
 Send an error to given host and port.
@@ -624,34 +637,6 @@ DHT::_sendError = (addr, transactionId, code, errMessage) ->
     message.t = transactionId
   @_debug 'sent error %s to %s', JSON.stringify(message), addr
   @_send addr, message
-
-###
-Get a transaction id, and (optionally) set a function to be called
-@param  {string}   addr
-@param  {function} fn
-###
-
-DHT::_getTransactionId = (addr, fn) ->
-  onTimeout = ->
-    reqs[transactionId] = null
-    fn new Error('query timed out')
-
-  onResponse = (err, res) ->
-    clearTimeout reqs[transactionId].timeout
-    reqs[transactionId] = null
-    fn err, res
-
-  fn = once(fn)
-  reqs = @transactions[addr]
-  if !reqs
-    reqs = @transactions[addr] = {}
-    reqs.nextTransactionId = 0
-  transactionId = reqs.nextTransactionId
-  reqs.nextTransactionId += 1
-  reqs[transactionId] =
-    cb: onResponse
-    timeout: setTimeout(onTimeout, constants.SEND_TIMEOUT)
-  transactionId
 
 ###
 Rotate secrets. Secrets are rotated every 5 minutes and tokens up to ten minutes
@@ -681,14 +666,13 @@ DHT::_rotateSecrets = ->
 ###
 
 DHT::toArray = ->
-  nodes = @nodes.toArray().map((contact) ->
+  @nodes.toArray().map((contact) ->
     # to remove properties added by k-bucket, like `distance`, etc.
     {
       id: contact.id.toString('hex')
       addr: contact.addr
     }
   )
-  nodes
 
 DHT::_addrIsSelf = (addr) ->
   @_port and constants.LOCAL_HOSTS[@ipv].some((host) ->
