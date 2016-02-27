@@ -49,6 +49,16 @@ describe 'TransactionManager', ()->
         @transactionErrorCb
       @transaction = @manager.getTransaction @address, @id
 
+      @responseCallbacks = [
+        @responseCb
+        @transactionResponseCb
+      ]
+      @errorCallbacks = [
+        @errorCb
+        @transactionErrorCb
+      ]
+      @callbacks = @responseCallbacks.concat @errorCallbacks
+
 
     afterEach ()->
       jasmine.clock().uninstall()
@@ -76,3 +86,12 @@ describe 'TransactionManager', ()->
         expect(callback).toHaveBeenCalled()
 
       expect(@manager._clearTransaction).toHaveBeenCalledTimes 1
+
+    it 'should respond', ()->
+      for callback in @callbacks
+        expect(callback).not.toHaveBeenCalled()
+
+      @transaction.respond 'a response'
+
+      for callback in @responseCallbacks
+        expect(callback).toHaveBeenCalled()
