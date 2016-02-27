@@ -22,11 +22,13 @@ class TransactionManager
 
   _buildOnResponseCallback: (messageType)->
     (response, fromAddress)=>
+      @_debug fromAddress, ' responded ', response
       if @mainResponseCallback
         @mainResponseCallback response, messageType, fromAddress
 
   _buildOnErrorCallback: (messageType)->
     (error, response, fromAddress)=>
+      @_debug fromAddress, ' errored ', error
       if @mainErrorCallback
         @mainErrorCallback error, response, messageType, fromAddress
 
