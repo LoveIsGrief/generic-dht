@@ -19,3 +19,15 @@ describe 'TransactionManager', ()->
   it 'should not create a new transaction without a messageType', ()->
     id = @manager.getNewTransactionId(null, null)
     expect(id).toBeNull()
+
+  it 'should create a new transaction with and address and messageType', ()->
+    id = @manager.getNewTransactionId @address, @messageType
+    expect(id).not.toBeNull()
+    expect(id).not.toBeUndefined()
+
+    transaction = @manager.getTransaction @address, id
+    expect(transaction).not.toBeNull()
+    expect(transaction).not.toBeUndefined()
+    expect(transaction.address).toEqual @address
+    expect(transaction.id).toEqual id
+
