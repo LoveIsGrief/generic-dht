@@ -64,25 +64,14 @@ describe 'TransactionManager', ()->
       jasmine.clock().uninstall()
 
     it 'should timeout and finalize once', ()->
-      responseCallbacks = [
-        @responseCb
-        @transactionResponseCb
-      ]
-      errorCallbacks = [
-        @errorCb
-        @transactionErrorCb
-      ]
-
-      for callback in responseCallbacks
-        expect(callback).not.toHaveBeenCalled()
-      for callback in errorCallbacks
+      for callback in @callbacks
         expect(callback).not.toHaveBeenCalled()
 
       jasmine.clock().tick(constants.SEND_TIMEOUT + 1)
 
-      for callback in responseCallbacks
+      for callback in @responseCallbacks
         expect(callback).not.toHaveBeenCalled()
-      for callback in errorCallbacks
+      for callback in @errorCallbacks
         expect(callback).toHaveBeenCalled()
 
       expect(@manager._clearTransaction).toHaveBeenCalledTimes 1
