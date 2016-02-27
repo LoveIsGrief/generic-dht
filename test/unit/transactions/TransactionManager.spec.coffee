@@ -11,3 +11,7 @@ describe 'TransactionManager', ()->
   it 'should not create a new transaction without an address', ()->
     id = @manager.getNewTransactionId()
     expect(id).toBeNull()
+
+  it 'should not create a new transaction without a messageType', ()->
+    id = @manager.getNewTransactionId(null, null)
+    expect(id).toBeNull()

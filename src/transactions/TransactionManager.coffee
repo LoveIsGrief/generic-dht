@@ -65,6 +65,9 @@ class TransactionManager
     responseCallback=_.noop,
     errorCallback=_.noop
   )->
+    if not (address or messageType)
+      return null
+
     transactions = @transactionsPerAddress[address]
     if !transactions
       transactions = @transactionsPerAddress[address] = {}
