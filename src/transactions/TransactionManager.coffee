@@ -39,7 +39,6 @@ class TransactionManager
       errorMessage = "Transaction timeout for #{address} - #{transactionId}"
       error = new Error errorMessage
       transaction.error error, null
-      @_clearTransaction address, transactionId
 
   ###
   Cleans the transaction from the known transactions
@@ -47,6 +46,7 @@ class TransactionManager
   _clearTransaction: (address, transactionId)->
     transaction = @getTransaction(address, transactionId)
     if transaction
+      clearTimeout transaction.timeout
       delete @transactionsPerAddress[address][transactionId]
 
 

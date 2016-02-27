@@ -68,7 +68,6 @@ describe 'TransactionManager', ()->
       for callback in errorCallbacks
         expect(callback).not.toHaveBeenCalled()
 
-      console.log @manager.transactionsPerAddress
       jasmine.clock().tick(constants.SEND_TIMEOUT + 1)
 
       for callback in responseCallbacks

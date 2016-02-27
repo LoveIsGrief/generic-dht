@@ -58,8 +58,12 @@ class Transaction extends events.EventEmitter
     if !@finalized
       clearTimeout @timeoutId
       prefixFn() if prefixFn
-      @finalized = true
-      @emit 'finalize', @address, @id
+
+      # finalize may have been called in the prefix
+      if !@finalized
+        @finalized = true
+        @emit 'finalize', @address, @id
+        @removeAllListeners 'finalize'
     else
       @_debug message
 
