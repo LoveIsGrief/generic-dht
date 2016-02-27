@@ -1,6 +1,10 @@
+seed = Math.floor(Math.random()*1000)
+console.log 'Seed for test order ', seed
 module.exports = {
   options:
     helperNameSuffix: '.js'
+    random: true
+    seed: seed
     specNameSuffix: 'spec.coffee'
     stopOnFailure: true
     useHelpers: true
