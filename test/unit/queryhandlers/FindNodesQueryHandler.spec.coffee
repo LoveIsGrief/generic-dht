@@ -1,8 +1,7 @@
-common = require('../../common')
-FindNodeQueryHandler = require(
-  '../../../src/queryhandlers/FindNodeQueryHandler'
-)
 KBucket = require('k-bucket')
+r = require('require-root')('generic-dht')
+common = r('test/common')
+FindNodeQueryHandler = r('/src/queryhandlers/FindNodeQueryHandler')
 
 K = 20
 MAX_CONCURRENCY = 1
@@ -18,7 +17,7 @@ describe 'FindNodeQueryHandler', ()->
         target: 'unknown node'
       }
     }
-    queryHandler = new FindNodeQueryHandler
+    queryHandler = new FindNodeQueryHandler {nodeId: 'aDHTNode'}
     func = queryHandler.checkMessage.bind queryHandler, message
     expect(func).not.toThrowError /Cannot handle/
 
@@ -36,7 +35,10 @@ describe 'FindNodeQueryHandler', ()->
       numberOfNodesPerKBucket: K
       numberOfNodesToPing: MAX_CONCURRENCY
     nodeId = 'some node id'
-    queryHandler = new FindNodeQueryHandler nodeId, nodes
+    queryHandler = new FindNodeQueryHandler {
+      nodeId: nodeId
+      nodes: nodes
+    }
     expected = {
       id: nodeId
       nodes: new Buffer('')

@@ -28,11 +28,6 @@ class PingQueryHandler extends BaseQueryHandler
   ]
   @NAME = 'ping'
 
-  ###
-  @param nodeId {String} ID of the DHT node this is responding from
-  ###
-  constructor: (@nodeId)->
-    super
 
   ###
   The appropriate response to a ping has a single key "id"

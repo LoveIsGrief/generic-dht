@@ -1,7 +1,21 @@
 compact2string = require('compact2string')
 crypto = require('crypto')
 string2compact = require('string2compact')
+p = require '../package'
+debug = require 'debug'
+_debug = debug "#{p.name}:utils"
 
+###
+Create a debug object prefixed with the package name
+@param o {Object}
+@return {debug]
+###
+d = (o)->
+  if typeof o is 'object'
+    name = o.constructor.name
+  else
+    name = o
+  debug "#{p.name}:#{name}"
 
 ###
 Convert "contacts" from the routing table
@@ -65,7 +79,7 @@ parseNodeInfo = (nodeInfo) ->
         addr: compact2string(nodeInfo.slice(i + 20, i + 26))
       i += 26
   catch err
-    debug 'error parsing node info ' + nodeInfo
+    _debug 'error parsing node info ' + nodeInfo
   contacts
 
 # Return sha1 hash **as a buffer**
@@ -90,6 +104,7 @@ transactionIdToBuffer = (transactionId) ->
 
 module.exports = {
   'convertToNodeInfo': convertToNodeInfo
+  'debug': d
   'fromArray': fromArray
   'idToBuffer': idToBuffer
   'idToHexString': idToHexString

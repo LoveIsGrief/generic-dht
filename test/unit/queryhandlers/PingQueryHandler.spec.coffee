@@ -1,5 +1,6 @@
-common = require('../../common')
-PingQueryHandler = require('../../../src/queryhandlers/PingQueryHandler')
+r = require('require-root')('generic-dht')
+common = r('test/common')
+PingQueryHandler = r('src/queryhandlers/PingQueryHandler')
 
 
 describe 'PingQueryHandler', ()->
@@ -12,7 +13,7 @@ describe 'PingQueryHandler', ()->
         id: 'source id'
       }
     }
-    queryHandler = new PingQueryHandler
+    queryHandler = new PingQueryHandler {nodeId: 'aPingNode'}
     func = queryHandler.checkMessage.bind queryHandler, message
     expect(func).not.toThrowError /Cannot handle/
 
@@ -25,7 +26,7 @@ describe 'PingQueryHandler', ()->
       }
     }
     nodeId = 'some node id'
-    queryHandler = new PingQueryHandler nodeId
+    queryHandler = new PingQueryHandler {nodeId: nodeId}
     expected = {
       id: nodeId
     }
