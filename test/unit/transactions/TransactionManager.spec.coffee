@@ -95,3 +95,16 @@ describe 'TransactionManager', ()->
 
       for callback in @responseCallbacks
         expect(callback).toHaveBeenCalled()
+      for callback in @errorCallbacks
+        expect(callback).not.toHaveBeenCalled()
+
+    it 'should error', ()->
+      for callback in @callbacks
+        expect(callback).not.toHaveBeenCalled()
+
+      @transaction.error 'a bad response'
+
+      for callback in @errorCallbacks
+        expect(callback).toHaveBeenCalled()
+      for callback in @responseCallbacks
+        expect(callback).not.toHaveBeenCalled()
