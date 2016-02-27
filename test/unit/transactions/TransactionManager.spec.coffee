@@ -1,5 +1,7 @@
+debug = require 'debug'
 r = require('require-root')('generic-dht')
 TransactionManager = r 'src/transactions/TransactionManager'
+constants = r 'src/constants'
 
 describe 'TransactionManager', ()->
 
@@ -31,3 +33,47 @@ describe 'TransactionManager', ()->
     expect(transaction.address).toEqual @address
     expect(transaction.id).toEqual id
 
+  describe 'transactions', ()->
+
+
+    beforeEach ()->
+      commonBeforeEach.call @
+
+      jasmine.clock().install()
+      @transactionResponseCb = jasmine.createSpy 'transactionResponseCb'
+      @transactionErrorCb = jasmine.createSpy 'transactionErrorCb'
+      spyOn(@manager, '_clearTransaction').and.callThrough()
+      @id = @manager.getNewTransactionId @address,
+        @messageType,
+        @transactionResponseCb,
+        @transactionErrorCb
+      @transaction = @manager.getTransaction @address, @id
+
+
+    afterEach ()->
+      jasmine.clock().uninstall()
+
+    it 'should timeout and finalize once', ()->
+      responseCallbacks = [
+        @responseCb
+        @transactionResponseCb
+      ]
+      errorCallbacks = [
+        @errorCb
+        @transactionErrorCb
+      ]
+
+      for callback in responseCallbacks
+        expect(callback).not.toHaveBeenCalled()
+      for callback in errorCallbacks
+        expect(callback).not.toHaveBeenCalled()
+
+      console.log @manager.transactionsPerAddress
+      jasmine.clock().tick(constants.SEND_TIMEOUT + 1)
+
+      for callback in responseCallbacks
+        expect(callback).not.toHaveBeenCalled()
+      for callback in errorCallbacks
+        expect(callback).toHaveBeenCalled()
+
+      expect(@manager._clearTransaction).toHaveBeenCalledTimes 1
